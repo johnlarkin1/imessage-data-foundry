@@ -8,9 +8,9 @@ This is a Python tool that generates fake iMessage SQLite databases with realist
 
 ## Key Documents
 
-1. **OBJECTIVE.md** — Project goals, requirements, and scope
-2. **ARCHITECTURE.md** — Technical design, project structure, data models
-3. **SCHEMA_NOTES.md** — iMessage database schema reference
+1. **docs/OBJECTIVE.md** — Project goals, requirements, and scope
+2. **docs/ARCHITECTURE.md** — Technical design, project structure, data models
+3. **docs/SCHEMA_NOTES.md** — iMessage database schema reference
 4. **README.md** — User-facing documentation
 5. **pyproject.toml** — Dependencies and project configuration
 
