@@ -6,8 +6,9 @@
 - ✅ Documentation (OBJECTIVE.md, ARCHITECTURE.md, SCHEMA_NOTES.md, CLAUDE.md)
 - ✅ **Phase 1: Foundation & Utilities** — Complete
 - ✅ **Phase 2: Database Layer** — Complete
-- 🔲 Phase 3: Persona System — **Up Next**
-- 🔲 Phase 4-7: Remaining functionality
+- ✅ **Phase 3: Persona System** — Complete
+- 🔲 Phase 4: LLM Integration — **Up Next**
+- 🔲 Phase 5-7: Remaining functionality
 
 ---
 
@@ -77,21 +78,53 @@ with DatabaseBuilder("chat.db", version="sequoia") as builder:
 
 ---
 
-## 🔲 Phase 3: Persona System (UP NEXT)
+## ✅ Phase 3: Persona System (COMPLETE)
 
 **Goal:** Create, store, and manage personas for conversation generation.
 
-| Task | File | Description |
-|------|------|-------------|
-| 3.1 | `personas/storage.py` | SQLite persistence for personas (foundry.db) |
-| 3.2 | `personas/library.py` | CRUD operations, import/export |
-| 3.3 | `personas/generator.py` | LLM-based persona generation (requires Phase 4) |
+| Task | File | Status | Description |
+|------|------|--------|-------------|
+| 3.1 | `personas/storage.py` | ✅ | SQLite persistence for personas (foundry.db) |
+| 3.2 | `personas/storage.py` | ✅ | CRUD operations, import/export (merged into storage) |
+| 3.3 | `personas/generator.py` | 🔲 | LLM-based persona generation (deferred to Phase 4) |
 
-**Dependency:** Task 3.3 requires Phase 4 LLM integration.
+**Deliverables:**
+- `PersonaStorage` class (240 lines) - full CRUD, batch ops, export/import
+- `PersonaNotFoundError` exception for error handling
+- `get_default_db_path()` with cascading defaults (env → ~/.config → ./data)
+- Schema: `personas` table + `generation_history` table with indexes
+- 37 tests with 96% code coverage
+- Context manager support for clean resource handling
+
+**Capabilities:**
+- Create/read/update/delete personas
+- Query by ID, name (partial match), or is_self flag
+- Batch create and delete operations
+- Export all personas to JSON
+- Import personas from JSON (with optional replace mode)
+
+**Example Usage:**
+```python
+from imessage_data_foundry.personas import PersonaStorage, Persona
+
+with PersonaStorage() as storage:
+    # Create
+    persona = Persona(name="Alice", identifier="+15551234567")
+    storage.create(persona)
+
+    # Query
+    alice = storage.get_by_name("Alice")[0]
+    me = storage.get_self()
+    all_personas = storage.list_all()
+
+    # Export/Import
+    data = storage.export_all()
+    storage.import_personas(data, replace=True)
+```
 
 ---
 
-## 🔲 Phase 4: LLM Integration
+## 🔲 Phase 4: LLM Integration (UP NEXT)
 
 **Goal:** Abstract interface for persona and message generation.
 
@@ -160,9 +193,9 @@ with DatabaseBuilder("chat.db", version="sequoia") as builder:
     ↓
 ✅ Phase 2 (Complete)
     ↓
-🔲 Phase 3.1 → 3.2              (Persona storage without LLM)
+✅ Phase 3 (Complete)
     ↓
-🔲 Phase 4.1 → 4.2 → 4.3        (LLM integration)
+🔲 Phase 4.1 → 4.2 → 4.3        (LLM integration + persona generator)
     ↓
 🔲 Phase 5.1 → 5.2              (Core conversation generation)
     ↓
@@ -173,11 +206,12 @@ Remaining phases as needed
 
 ---
 
-## Immediate Next Steps (Phase 3)
+## Immediate Next Steps (Phase 4)
 
-1. **Implement `personas/storage.py`** — SQLite persistence for personas in `foundry.db`
-2. **Implement `personas/library.py`** — CRUD operations (add, edit, delete, list)
-3. **Add persona import/export** — JSON format for sharing persona sets
+1. **Implement `llm/base.py`** — Abstract LLMProvider interface
+2. **Implement `llm/prompts.py`** — Prompt templates for persona/conversation generation
+3. **Implement `llm/anthropic_provider.py`** — Anthropic Claude implementation
+4. **Implement `personas/generator.py`** — LLM-based persona generation
 
 ---
 
@@ -207,8 +241,9 @@ Remaining phases as needed
 
 ## Test Coverage
 
-| Phase | Test Files | Lines |
+| Phase | Test Files | Tests |
 |-------|------------|-------|
-| Phase 1 | test_apple_time.py, test_phone_numbers.py, test_persona_models.py, test_conversation_models.py | 647 |
-| Phase 2 | test_schema_base.py, test_builder.py, test_validators.py, test_version_detect.py | 727 |
-| **Total** | 8 files | **1,374** |
+| Phase 1 | test_apple_time.py, test_phone_numbers.py, test_persona_models.py, test_conversation_models.py | 63 |
+| Phase 2 | test_schema_base.py, test_builder.py, test_validators.py, test_version_detect.py | 103 |
+| Phase 3 | test_persona_storage.py | 37 |
+| **Total** | **9 files** | **203 tests** |
