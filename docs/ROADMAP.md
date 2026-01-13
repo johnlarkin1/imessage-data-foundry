@@ -7,8 +7,9 @@
 - ✅ **Phase 1: Foundation & Utilities** — Complete
 - ✅ **Phase 2: Database Layer** — Complete
 - ✅ **Phase 3: Persona System** — Complete
-- 🔲 Phase 4: LLM Integration — **Up Next**
-- 🔲 Phase 5-7: Remaining functionality
+- ✅ **Phase 4: LLM Integration** — Complete
+- 🔲 Phase 5: Conversation Generation — **Up Next**
+- 🔲 Phase 6-7: Remaining functionality
 
 ---
 
@@ -103,22 +104,63 @@ with PersonaStorage() as storage:
 
 ---
 
-## 🔲 Phase 4: LLM Integration (UP NEXT)
+## ✅ Phase 4: LLM Integration (COMPLETE)
 
-**Goal:** Abstract interface for persona and message generation.
+**Goal:** Abstract interface for persona and message generation with local MLX models as default.
 
-| Task | File | Description |
-|------|------|-------------|
-| 4.1 | `llm/base.py` | Abstract LLMProvider interface |
-| 4.2 | `llm/prompts.py` | Prompt templates for persona/conversation generation |
-| 4.3 | `llm/anthropic_provider.py` | Anthropic Claude implementation |
-| 4.4 | `llm/openai_provider.py` | OpenAI GPT implementation |
+| Task | File | Status | Description |
+|------|------|--------|-------------|
+| 4.1 | `llm/config.py` | ✅ | LLMConfig with pydantic-settings, RAM auto-detection |
+| 4.2 | `llm/models.py` | ✅ | PersonaConstraints, GeneratedMessage, GeneratedPersona |
+| 4.3 | `llm/base.py` | ✅ | Abstract LLMProvider interface |
+| 4.4 | `llm/prompts.py` | ✅ | Prompt templates for persona/conversation generation |
+| 4.5 | `llm/local_provider.py` | ✅ | Local MLX provider (default, no API key required) |
+| 4.6 | `llm/openai_provider.py` | ✅ | OpenAI GPT implementation |
+| 4.7 | `llm/anthropic_provider.py` | ✅ | Anthropic Claude implementation |
+| 4.8 | `llm/manager.py` | ✅ | ProviderManager with fallback logic |
 
-**Note:** Implement Anthropic first (we're already using Claude).
+**Deliverables:**
+- `LocalMLXProvider` - Default provider using mlx-lm on Apple Silicon (no API key required)
+- `OpenAIProvider` - Optional cloud provider (requires OPENAI_API_KEY)
+- `AnthropicProvider` - Optional cloud provider (requires ANTHROPIC_API_KEY)
+- `ProviderManager` - Automatic provider selection with fallback chain
+- Auto-detection of system RAM for optimal model selection:
+  - 8GB RAM → Llama-3.2-3B-Instruct-4bit
+  - 16GB+ RAM → Qwen3-4B-Instruct-4bit
+  - 24GB+ RAM → Qwen3-8B-Instruct-4bit
+- 65 tests with comprehensive coverage
+
+**Capabilities:**
+- Generate personas with constraints (relationship, vocabulary, topics, etc.)
+- Generate conversation messages in batches
+- Stream messages for progress feedback
+- Automatic JSON parsing with validation
+- Lazy model loading for fast startup
+
+**Example Usage:**
+```python
+from imessage_data_foundry.llm import ProviderManager, PersonaConstraints
+
+async def generate():
+    manager = ProviderManager()
+    provider = await manager.get_provider()  # Auto-selects best available
+
+    # Generate personas
+    constraints = PersonaConstraints(relationship="friend", vocabulary_level="moderate")
+    personas = await provider.generate_personas(constraints, count=2)
+
+    # Generate messages
+    messages = await provider.generate_messages(
+        persona_descriptions=[...],
+        context=[],
+        count=30,
+        seed="planning a weekend trip"
+    )
+```
 
 ---
 
-## 🔲 Phase 5: Conversation Generation
+## 🔲 Phase 5: Conversation Generation (UP NEXT)
 
 **Goal:** Generate realistic message threads with proper timestamps.
 
@@ -191,7 +233,7 @@ Quick validation: Generate a test DB, inspect with sqlite3
     ↓
 ✅ Phase 3 (Complete)
     ↓
-🔲 Phase 4.1 → 4.2 → 4.3        (LLM integration + persona generator)
+✅ Phase 4 (Complete)
     ↓
 🔲 Phase 5.1 → 5.2              (Core conversation generation)
     ↓
@@ -202,12 +244,11 @@ Remaining phases as needed
 
 ---
 
-## Immediate Next Steps (Phase 4)
+## Immediate Next Steps (Phase 5)
 
-1. **Implement `llm/base.py`** — Abstract LLMProvider interface
-2. **Implement `llm/prompts.py`** — Prompt templates for persona/conversation generation
-3. **Implement `llm/anthropic_provider.py`** — Anthropic Claude implementation
-4. **Implement `personas/generator.py`** — LLM-based persona generation
+1. **Implement `conversations/timestamps.py`** — Realistic timestamp distribution algorithm
+2. **Implement `conversations/generator.py`** — Orchestrate LLM calls, batch generation
+3. **Implement `conversations/seeding.py`** — Conversation themes/seeds handling
 
 ---
 
@@ -239,4 +280,5 @@ Remaining phases as needed
 | Phase 1 | test_apple_time.py, test_phone_numbers.py, test_persona_models.py, test_conversation_models.py | 63 |
 | Phase 2 | test_schema_base.py, test_builder.py, test_validators.py, test_version_detect.py | 103 |
 | Phase 3 | test_persona_storage.py | 37 |
-| **Total** | **9 files** | **203 tests** |
+| Phase 4 | test_llm_config.py, test_llm_models.py, test_llm_prompts.py, test_llm_manager.py | 65 |
+| **Total** | **13 files** | **268 tests** |
