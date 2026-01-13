@@ -188,21 +188,23 @@ IMESSAGE_FOUNDRY_CONFIG=~/.config/imessage-data-foundry/config.toml
 
 ## Useful Commands During Development
 
+Use `make` commands for common development tasks:
+
 ```bash
 # Run the app
-uv run python -m imessage_data_foundry
+make run
 
 # Run tests
-uv run pytest
+make test
 
-# Type checking
-uv run mypy imessage_data_foundry/
+# Type checking only
+make check
 
 # Format code
-uv run ruff format imessage_data_foundry/
+make fmt
 
-# Lint
-uv run ruff check imessage_data_foundry/
+# Lint (includes ruff check, format check, and mypy)
+make lint
 
 # Inspect a generated database
 sqlite3 ./output/chat.db ".schema"

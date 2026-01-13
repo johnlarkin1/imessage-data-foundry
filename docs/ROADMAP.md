@@ -5,8 +5,10 @@
 - ✅ Project scaffolding (pyproject.toml, basic entry points)
 - ✅ Documentation (OBJECTIVE.md, ARCHITECTURE.md, SCHEMA_NOTES.md, CLAUDE.md)
 - ✅ **Phase 1: Foundation & Utilities** — Complete
-- 🔲 Phase 2: Database Layer — **Up Next**
-- 🔲 Phase 3-8: Remaining functionality
+- ✅ **Phase 2: Database Layer** — Complete
+- ✅ **Phase 3: Persona System** — Complete
+- 🔲 Phase 4: LLM Integration — **Up Next**
+- 🔲 Phase 5-7: Remaining functionality
 
 ---
 
@@ -55,21 +57,53 @@ sqlite3 ~/Library/Messages/chat.db ".schema" | diff - <(sqlite3 ./output/chat.db
 
 ---
 
-## 🔲 Phase 3: Persona System
+## ✅ Phase 3: Persona System (COMPLETE)
 
 **Goal:** Create, store, and manage personas for conversation generation.
 
-| Task | File | Description |
-|------|------|-------------|
-| 3.1 | `personas/storage.py` | SQLite persistence for personas (foundry.db) |
-| 3.2 | `personas/library.py` | CRUD operations, import/export |
-| 3.3 | `personas/generator.py` | LLM-based persona generation (requires Phase 4) |
+| Task | File | Status | Description |
+|------|------|--------|-------------|
+| 3.1 | `personas/storage.py` | ✅ | SQLite persistence for personas (foundry.db) |
+| 3.2 | `personas/storage.py` | ✅ | CRUD operations, import/export (merged into storage) |
+| 3.3 | `personas/generator.py` | 🔲 | LLM-based persona generation (deferred to Phase 4) |
 
-**Dependency:** Task 3.3 requires Phase 4 LLM integration.
+**Deliverables:**
+- `PersonaStorage` class (240 lines) - full CRUD, batch ops, export/import
+- `PersonaNotFoundError` exception for error handling
+- `get_default_db_path()` with cascading defaults (env → ~/.config → ./data)
+- Schema: `personas` table + `generation_history` table with indexes
+- 37 tests with 96% code coverage
+- Context manager support for clean resource handling
+
+**Capabilities:**
+- Create/read/update/delete personas
+- Query by ID, name (partial match), or is_self flag
+- Batch create and delete operations
+- Export all personas to JSON
+- Import personas from JSON (with optional replace mode)
+
+**Example Usage:**
+```python
+from imessage_data_foundry.personas import PersonaStorage, Persona
+
+with PersonaStorage() as storage:
+    # Create
+    persona = Persona(name="Alice", identifier="+15551234567")
+    storage.create(persona)
+
+    # Query
+    alice = storage.get_by_name("Alice")[0]
+    me = storage.get_self()
+    all_personas = storage.list_all()
+
+    # Export/Import
+    data = storage.export_all()
+    storage.import_personas(data, replace=True)
+```
 
 ---
 
-## 🔲 Phase 4: LLM Integration
+## 🔲 Phase 4: LLM Integration (UP NEXT)
 
 **Goal:** Abstract interface for persona and message generation.
 
@@ -155,9 +189,9 @@ sqlite3 ~/Library/Messages/chat.db ".schema" | diff - <(sqlite3 ./output/chat.db
     ↓
 Quick validation: Generate a test DB, inspect with sqlite3
     ↓
-🔲 Phase 3.1 → 3.2              (Persona storage without LLM)
+✅ Phase 3 (Complete)
     ↓
-🔲 Phase 4.1 → 4.2 → 4.3        (LLM integration)
+🔲 Phase 4.1 → 4.2 → 4.3        (LLM integration + persona generator)
     ↓
 🔲 Phase 5.1 → 5.2              (Core conversation generation)
     ↓
@@ -168,12 +202,14 @@ Remaining phases as needed
 
 ---
 
-## Immediate Next Steps (Phase 2)
+## Immediate Next Steps (Phase 4)
 
-1. **Research the actual Sequoia schema** — Extract from real `chat.db` (requires Full Disk Access)
-2. **Implement `db/schema/base.py`** — Define common table structures
-3. **Implement `db/schema/sequoia.py`** — Complete schema as SQL strings
-4. **Implement `db/builder.py`** — The core DatabaseBuilder class
+1. **Implement `llm/base.py`** — Abstract LLMProvider interface
+2. **Implement `llm/prompts.py`** — Prompt templates for persona/conversation generation
+3. **Implement `llm/anthropic_provider.py`** — Anthropic Claude implementation
+4. **Implement `personas/generator.py`** — LLM-based persona generation
+
+---
 
 ## Open Research Tasks
 
@@ -193,3 +229,14 @@ Remaining phases as needed
 | M4: LLM Messages | Can generate messages via LLM and insert them | 🔲 |
 | M5: Full Pipeline | End-to-end: personas → conversations → valid DB | 🔲 |
 | M6: Tool Compat | Output works with `imessage-exporter` | 🔲 |
+
+---
+
+## Test Coverage
+
+| Phase | Test Files | Tests |
+|-------|------------|-------|
+| Phase 1 | test_apple_time.py, test_phone_numbers.py, test_persona_models.py, test_conversation_models.py | 63 |
+| Phase 2 | test_schema_base.py, test_builder.py, test_validators.py, test_version_detect.py | 103 |
+| Phase 3 | test_persona_storage.py | 37 |
+| **Total** | **9 files** | **203 tests** |
