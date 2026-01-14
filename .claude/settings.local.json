@@ -2,8 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(gh pr diff:*)",
+      "Bash(cat:*)",
+      "Bash(uv run pytest:*)",
       "mcp__plugin_context7_context7__resolve-library-id",
-      "mcp__plugin_context7_context7__query-docs"
+      "mcp__plugin_context7_context7__query-docs",
+      "Skill(generate-pr)",
+      "WebSearch"
     ]
   }
 }
