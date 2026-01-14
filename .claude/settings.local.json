@@ -5,7 +5,12 @@
       "WebSearch",
       "mcp__plugin_context7_context7__query-docs",
       "Bash(uv run pytest:*)",
-      "Skill(generate-pr)"
+      "Skill(generate-pr)",
+      "Bash(uv run ruff check:*)",
+      "Bash(uv run python:*)",
+      "Bash(make lint:*)",
+      "Bash(python3:*)",
+      "Skill(document-skills:skill-creator)"
     ]
   }
 }

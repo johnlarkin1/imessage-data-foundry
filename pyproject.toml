@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
     "textual>=0.47.0",
     "rich>=13.7.0",
+    "click>=8.0.0",
     "openai>=1.12.0",
     "anthropic>=0.18.0",
     "pydantic>=2.6.0",
@@ -49,6 +50,7 @@ dev = [
 
 [project.scripts]
 imessage-data-foundry = "imessage_data_foundry.__main__:main"
+foundry = "imessage_data_foundry.cli:cli"
 
 [project.urls]
 Homepage = "https://github.com/johnlarkin1/imessage-data-foundry"

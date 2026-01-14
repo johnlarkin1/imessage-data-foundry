@@ -9,8 +9,8 @@
 - ✅ **Phase 3: Persona System** — Complete
 - ✅ **Phase 4: LLM Integration** — Complete
 - ✅ **Phase 5: Conversation Generation** — Complete
-- 🔲 Phase 6: TUI Application — **Up Next**
-- 🔲 Phase 7: Testing & Polish
+- ✅ **Phase 6: TUI Application** — Complete
+- 🔲 Phase 7: Testing & Polish — **Up Next**
 
 ---
 
@@ -238,22 +238,41 @@ async def generate():
 
 ---
 
-## 🔲 Phase 6: TUI Application
+## ✅ Phase 6: TUI Application (COMPLETE)
 
 **Goal:** Interactive Textual interface for the full workflow.
 
-| Task | File | Description |
-|------|------|-------------|
-| 6.1 | `app.py` | Main Textual App class, screen navigation |
-| 6.2 | `ui/screens/welcome.py` | Welcome screen, app overview |
-| 6.3 | `ui/screens/config.py` | Configuration (macOS version, output path, API keys) |
-| 6.4 | `ui/screens/personas.py` | Persona management (create, edit, delete, list) |
-| 6.5 | `ui/screens/conversations.py` | Conversation setup (participants, counts, seeds) |
-| 6.6 | `ui/screens/generation.py` | Progress display during generation |
-| 6.7 | `ui/widgets/` | Reusable widgets (PersonaCard, ChatPreview, Progress) |
-| 6.8 | `ui/styles.tcss` | Textual CSS styling |
+| Task | File | Status | Description |
+|------|------|--------|-------------|
+| 6.0 | `cli.py` | ✅ | Click-based CLI for pipeline validation |
+| 6.1 | `app.py` | ✅ | Main Textual App class, screen navigation |
+| 6.2 | `ui/screens/welcome.py` | ✅ | Welcome screen, app overview |
+| 6.3 | `ui/screens/config.py` | ✅ | Configuration (macOS version, output path, LLM provider) |
+| 6.4 | `ui/screens/personas.py` | ✅ | Persona management (create, edit, delete, select) |
+| 6.5 | `ui/screens/conversations.py` | ✅ | Conversation setup (participants, counts, seeds) |
+| 6.6 | `ui/screens/generation.py` | ✅ | Progress display during generation |
+| 6.7 | `ui/widgets/progress.py` | ✅ | Generation progress widget |
+| 6.8 | `ui/styles.tcss` | ✅ | Textual CSS styling |
+| 6.9 | `ui/state.py` | ✅ | AppState dataclass for wizard state |
+| 6.10 | `ui/screens/base.py` | ✅ | BaseScreen with common patterns |
 
-**Alternative:** Consider a simpler CLI interface first (`cli.py`) to validate core functionality before building the TUI.
+**Deliverables:**
+- CLI with 6 commands: `list-providers`, `list-personas`, `create-persona`, `delete-persona`, `show-persona`, `generate`
+- Full wizard TUI: Welcome → Config → Personas → Conversations → Generation
+- Async LLM integration with progress callbacks
+- Persona creation form with all fields
+- Real-time generation progress display
+
+**Usage:**
+```bash
+# CLI mode (with arguments)
+python -m imessage_data_foundry list-providers
+python -m imessage_data_foundry create-persona --name "Alice" --identifier "+15551234567"
+python -m imessage_data_foundry generate --personas "id1,id2" --count 100
+
+# TUI mode (no arguments)
+python -m imessage_data_foundry
+```
 
 ---
 
@@ -280,20 +299,18 @@ async def generate():
     ↓
 ✅ Phase 5 (Complete)
     ↓
-🔲 Phase 6.1 (basic CLI)        (End-to-end validation)
+✅ Phase 6 (Complete)
     ↓
-🔲 Phase 6.2+ (TUI screens)     (Full TUI application)
-    ↓
-🔲 Phase 7 (Testing & Polish)
+🔲 Phase 7 (Testing & Polish)   ← Current
 ```
 
 ---
 
-## Immediate Next Steps (Phase 6)
+## Immediate Next Steps (Phase 7)
 
-1. **Implement basic CLI** (`cli.py`) — Simple command-line interface to validate full pipeline
-2. **Test with `imessage-exporter`** — Verify generated databases work with external tools
-3. **Build TUI screens** — Welcome, config, personas, conversations, generation progress
+1. **Integration test with `imessage-exporter`** — Verify generated databases work with external tools
+2. **End-to-end tests** — Full pipeline testing from persona creation to database output
+3. **Performance benchmarks** — Measure batch insert performance, optimize if needed
 
 ---
 
@@ -301,7 +318,7 @@ async def generate():
 
 - [x] Extract exact schema from a real Sequoia `chat.db`
 - [x] Identify schema differences between Sonoma/Sequoia
-- [ ] Determine optimal LLM batch sizes for conversation generation
+- [x] Determine optimal LLM batch sizes for conversation generation (30 messages per batch)
 - [ ] Research `attributedBody` blob format (NSAttributedString plist)
 - [ ] Test generated databases with `imessage-exporter`
 

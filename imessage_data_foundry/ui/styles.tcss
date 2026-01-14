@@ -1,0 +1,332 @@
+/* iMessage Data Foundry TUI Styles */
+
+/* Global */
+Screen {
+    layout: vertical;
+    background: $surface-darken-1;
+}
+
+#screen-body {
+    padding: 1 2;
+}
+
+.section-label {
+    text-style: bold;
+    margin-top: 1;
+    margin-bottom: 0;
+    color: $primary-lighten-2;
+}
+
+.hint {
+    color: $text-muted;
+    text-style: italic;
+    margin-top: 0;
+}
+
+/* Welcome Screen */
+#welcome-content {
+    align: center middle;
+    height: 100%;
+}
+
+#logo {
+    text-align: center;
+    color: $primary;
+}
+
+#tagline {
+    text-align: center;
+    color: $text-muted;
+    margin-bottom: 2;
+}
+
+#welcome-content #spacer {
+    height: 2;
+}
+
+#welcome-content #spacer2 {
+    height: 3;
+}
+
+#button-row {
+    height: auto;
+}
+
+#button-row Button {
+    margin: 0 1;
+}
+
+#hint {
+    text-align: center;
+    color: $text-muted;
+}
+
+/* Config Screen */
+#config-form {
+    padding: 1 4;
+    max-width: 100;
+}
+
+.config-section {
+    border: solid $primary-darken-2;
+    padding: 1 2;
+    margin-bottom: 1;
+    background: $surface;
+}
+
+.config-section-title {
+    text-style: bold;
+    color: $primary-lighten-1;
+    margin-bottom: 1;
+}
+
+#config-form RadioSet {
+    margin-bottom: 0;
+    padding: 0 1;
+}
+
+#config-form Input {
+    margin-bottom: 0;
+}
+
+#provider-status {
+    margin-top: 1;
+    padding: 0 1;
+}
+
+#version-select {
+    padding: 0;
+}
+
+/* Personas Screen */
+#personas-layout {
+    height: 100%;
+}
+
+#personas-list-panel {
+    width: 60%;
+    padding: 1;
+    border-right: solid $primary-darken-2;
+}
+
+#create-form-panel {
+    width: 40%;
+    padding: 1;
+    background: $surface;
+}
+
+#personas-list {
+    height: 1fr;
+    margin-bottom: 1;
+}
+
+#personas-actions {
+    height: auto;
+    dock: bottom;
+}
+
+#personas-actions Button {
+    margin-right: 1;
+}
+
+#selection-hint {
+    margin-bottom: 1;
+    color: $warning;
+}
+
+#no-personas {
+    color: $text-muted;
+    text-style: italic;
+}
+
+/* Persona Cards */
+PersonaCard {
+    height: auto;
+    padding: 1;
+    margin-bottom: 1;
+    border: solid $primary-darken-3;
+    background: $surface;
+}
+
+PersonaCard.selected {
+    border: double $success;
+    background: $success-darken-3;
+}
+
+PersonaCard .persona-name {
+    text-style: bold;
+    color: $text;
+}
+
+PersonaCard .persona-identifier {
+    color: $text-muted;
+}
+
+PersonaCard .persona-self {
+    color: $warning;
+    text-style: italic;
+}
+
+/* Conversations Screen */
+#conversation-config {
+    padding: 1 4;
+    max-width: 100;
+}
+
+#selected-personas-display {
+    border: solid $primary-darken-2;
+    padding: 1 2;
+    margin-bottom: 1;
+    background: $surface;
+}
+
+#conversation-config Input {
+    margin-bottom: 0;
+}
+
+#conversation-config Select {
+    margin-bottom: 1;
+}
+
+#time-range {
+    height: auto;
+    align: left middle;
+}
+
+#time-range Label {
+    margin-top: 1;
+    margin-right: 1;
+}
+
+#time-range Input {
+    width: 10;
+}
+
+.seed-input {
+    height: 5;
+    margin-bottom: 1;
+    border: solid $primary-darken-2;
+}
+
+#validation-message {
+    margin-top: 2;
+    padding: 1;
+    text-align: center;
+}
+
+/* Generation Screen */
+#generation-content {
+    align: center middle;
+    height: 100%;
+    width: 80%;
+    max-width: 100;
+}
+
+#gen-title {
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 2;
+    color: $primary-lighten-1;
+}
+
+#gen-phase {
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#gen-progress {
+    margin: 1 0;
+    width: 100%;
+}
+
+#gen-stats {
+    text-align: center;
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+#gen-result {
+    text-align: center;
+    margin-top: 2;
+    padding: 1;
+    border: solid $success-darken-2;
+    background: $success-darken-3;
+}
+
+#gen-buttons {
+    margin-top: 3;
+    height: auto;
+}
+
+#gen-buttons Button {
+    margin: 0 1;
+}
+
+/* Navigation */
+NavigationBar {
+    dock: bottom;
+    height: 3;
+    padding: 0 2;
+    align: right middle;
+    background: $surface;
+    border-top: solid $primary-darken-3;
+}
+
+NavigationBar Button {
+    margin: 0 1;
+}
+
+/* Step Indicator */
+StepIndicator {
+    background: $primary-darken-1;
+    color: $text;
+    padding: 0 2;
+    text-style: bold;
+}
+
+/* Form elements */
+Input {
+    border: solid $primary-darken-2;
+}
+
+Input:focus {
+    border: solid $primary;
+}
+
+RadioSet {
+    border: none;
+    background: transparent;
+}
+
+RadioButton {
+    padding: 0 1;
+}
+
+RadioButton:focus {
+    background: $primary-darken-2;
+}
+
+Select {
+    border: solid $primary-darken-2;
+}
+
+Select:focus {
+    border: solid $primary;
+}
+
+/* Buttons */
+Button {
+    min-width: 12;
+}
+
+Button.primary {
+    background: $primary;
+}
+
+Button.success {
+    background: $success;
+}
+
+Button.error {
+    background: $error;
+}
