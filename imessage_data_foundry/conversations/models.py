@@ -1,7 +1,6 @@
 """Pydantic models for Message, Chat, Handle, and Attachment."""
 
-from __future__ import annotations
-
+from typing import Self
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -45,7 +44,7 @@ class Message(BaseModel):
         text: str,
         date: int,
         service: str = "iMessage",
-    ) -> Message:
+    ) -> Self:
         return cls(
             text=text,
             date=date,
@@ -63,7 +62,7 @@ class Message(BaseModel):
         date: int,
         handle_id: int,
         service: str = "iMessage",
-    ) -> Message:
+    ) -> Self:
         return cls(
             text=text,
             date=date,
@@ -92,7 +91,7 @@ class Chat(BaseModel):
         cls,
         identifier: str,
         service: str = "iMessage",
-    ) -> Chat:
+    ) -> Self:
         service_prefix = service if service in ("iMessage", "SMS") else "iMessage"
         return cls(
             guid=f"{service_prefix};-;{identifier}",
@@ -106,7 +105,7 @@ class Chat(BaseModel):
         cls,
         display_name: str | None = None,
         service: str = "iMessage",
-    ) -> Chat:
+    ) -> Self:
         service_prefix = service if service in ("iMessage", "SMS") else "iMessage"
         group_id = f"chat{uuid4().hex[:12]}"
         return cls(
@@ -128,7 +127,7 @@ class Handle(BaseModel):
     person_centric_id: str | None = None
 
     @classmethod
-    def from_persona(cls, persona: Persona) -> Handle:
+    def from_persona(cls, persona: Persona) -> Self:
         return cls(
             id=persona.identifier,
             country=persona.country_code

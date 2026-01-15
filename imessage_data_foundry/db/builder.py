@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Self
 from uuid import uuid4
 
 from imessage_data_foundry.conversations.models import Attachment, Chat, Handle, Message
@@ -408,7 +407,7 @@ class DatabaseBuilder:
     def attachment_count(self) -> int:
         return len(self._attachment_guids)
 
-    def __enter__(self) -> DatabaseBuilder:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
