@@ -1,9 +1,3 @@
-"""macOS 14 Sonoma iMessage database schema.
-
-Based on Sequoia schema with newer columns removed.
-Note: This is an approximation - actual Sonoma schema may vary slightly.
-"""
-
 from imessage_data_foundry.db.schema.base import (
     generate_chat_table,
     generate_common_indexes,
@@ -20,7 +14,6 @@ SCHEMA_VERSION: str = "sonoma"
 MACOS_VERSIONS: list[str] = ["14.0", "14.1", "14.2", "14.3", "14.4", "14.5", "14.6"]
 CLIENT_VERSION: str = "14020"
 
-# Sonoma message table - excludes satellite, scheduling, and some newer columns
 MESSAGE_TABLE: str = """CREATE TABLE message (
     ROWID INTEGER PRIMARY KEY AUTOINCREMENT,
     guid TEXT UNIQUE NOT NULL,
@@ -112,7 +105,6 @@ MESSAGE_TABLE: str = """CREATE TABLE message (
     fallback_hash TEXT DEFAULT NULL
 )"""
 
-# Sonoma attachment table - excludes some newer emoji/preview columns
 ATTACHMENT_TABLE: str = """CREATE TABLE attachment (
     ROWID INTEGER PRIMARY KEY AUTOINCREMENT,
     guid TEXT UNIQUE NOT NULL,
@@ -143,7 +135,6 @@ ATTACHMENT_TABLE: str = """CREATE TABLE attachment (
 
 
 def get_tables() -> dict[str, str]:
-    """Return all table CREATE statements for Sonoma."""
     tables = {
         "_SqliteDatabaseProperties": generate_properties_table(),
         "handle": generate_handle_table(),
@@ -160,9 +151,7 @@ def get_tables() -> dict[str, str]:
 
 
 def get_indexes() -> list[str]:
-    """Return all index CREATE statements for Sonoma."""
     indexes = generate_common_indexes()
-    # Sonoma message indexes (excludes satellite/scheduling indexes)
     indexes.extend(
         [
             "CREATE INDEX message_idx_failed ON message(is_finished, is_from_me, error)",
@@ -188,7 +177,6 @@ def get_indexes() -> list[str]:
 
 
 def get_triggers() -> list[str]:
-    """Return all trigger CREATE statements for Sonoma."""
     return [
         """CREATE TRIGGER after_insert_on_chat_message_join AFTER INSERT ON chat_message_join BEGIN
     UPDATE message
@@ -219,7 +207,6 @@ END""",
 
 
 def get_metadata() -> dict[str, str]:
-    """Return _SqliteDatabaseProperties content for Sonoma."""
     return {
         "_ClientVersion": CLIENT_VERSION,
         "counter_in_all": "0",

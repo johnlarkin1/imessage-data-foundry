@@ -1,9 +1,3 @@
-"""macOS 15 Sequoia iMessage database schema.
-
-Based on real schema extracted from ~/Library/Messages/chat.db
-with _ClientVersion: 18020
-"""
-
 from imessage_data_foundry.db.schema.base import (
     generate_chat_table,
     generate_common_indexes,
@@ -150,7 +144,6 @@ ATTACHMENT_TABLE: str = """CREATE TABLE attachment (
 
 
 def get_tables() -> dict[str, str]:
-    """Return all table CREATE statements for Sequoia."""
     tables = {
         "_SqliteDatabaseProperties": generate_properties_table(),
         "handle": generate_handle_table(),
@@ -167,9 +160,7 @@ def get_tables() -> dict[str, str]:
 
 
 def get_indexes() -> list[str]:
-    """Return all index CREATE statements for Sequoia."""
     indexes = generate_common_indexes()
-    # Sequoia-specific message indexes
     indexes.extend(
         [
             "CREATE INDEX message_idx_failed ON message(is_finished, is_from_me, error)",
@@ -199,14 +190,7 @@ def get_indexes() -> list[str]:
 
 
 def get_triggers() -> list[str]:
-    """Return all trigger CREATE statements for Sequoia.
-
-    Note: Some triggers reference functions like delete_attachment_path() that are
-    built into the Messages app. For generated databases, we include a subset that
-    work without external functions.
-    """
     return [
-        # Update cache_roomnames when joining message to chat
         """CREATE TRIGGER after_insert_on_chat_message_join AFTER INSERT ON chat_message_join BEGIN
     UPDATE message
       SET cache_roomnames = (
@@ -217,23 +201,18 @@ def get_triggers() -> list[str]:
       )
       WHERE message.ROWID = NEW.message_id;
 END""",
-        # Update cache_has_attachments when joining attachment
         """CREATE TRIGGER after_insert_on_message_attachment_join AFTER INSERT ON message_attachment_join BEGIN
     UPDATE message SET cache_has_attachments = 1 WHERE message.ROWID = NEW.message_id;
 END""",
-        # Update message_date in join when message date changes
         """CREATE TRIGGER update_message_date_after_update_on_message AFTER UPDATE OF date ON message BEGIN
     UPDATE chat_message_join SET message_date = NEW.date WHERE message_id = NEW.ROWID AND message_date != NEW.date;
 END""",
-        # Track deleted messages
         """CREATE TRIGGER add_to_deleted_messages AFTER DELETE ON message BEGIN
     INSERT INTO deleted_messages (guid) VALUES (OLD.guid);
 END""",
-        # Sync deleted messages to CloudKit tracking
         """CREATE TRIGGER add_to_sync_deleted_messages AFTER DELETE ON message BEGIN
     INSERT INTO sync_deleted_messages (guid, recordID) VALUES (OLD.guid, OLD.ck_record_id);
 END""",
-        # Sync deleted attachments to CloudKit tracking
         """CREATE TRIGGER add_to_sync_deleted_attachments AFTER DELETE ON attachment BEGIN
     INSERT INTO sync_deleted_attachments (guid, recordID) VALUES (OLD.guid, OLD.ck_record_id);
 END""",
@@ -241,7 +220,6 @@ END""",
 
 
 def get_metadata() -> dict[str, str]:
-    """Return _SqliteDatabaseProperties content for Sequoia."""
     return {
         "_ClientVersion": CLIENT_VERSION,
         "counter_in_all": "0",

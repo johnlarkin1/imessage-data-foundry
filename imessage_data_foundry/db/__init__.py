@@ -1,5 +1,3 @@
-"""Database layer for iMessage Data Foundry."""
-
 from imessage_data_foundry.db.builder import DatabaseBuilder
 from imessage_data_foundry.db.schema.base import SchemaVersion
 from imessage_data_foundry.db.validators import (

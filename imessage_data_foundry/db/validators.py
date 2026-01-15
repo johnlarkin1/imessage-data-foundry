@@ -1,5 +1,3 @@
-"""Schema validation utilities for iMessage databases."""
-
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -7,8 +5,6 @@ from pathlib import Path
 
 @dataclass
 class ValidationResult:
-    """Result of schema validation."""
-
     is_valid: bool
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -27,15 +23,12 @@ class ValidationResult:
 
 @dataclass
 class TableInfo:
-    """Information about a database table."""
-
     name: str
     columns: dict[str, str]  # column_name -> type
     row_count: int
 
 
 def get_table_info(conn: sqlite3.Connection, table_name: str) -> TableInfo:
-    """Get information about a specific table."""
     cursor = conn.execute(f"PRAGMA table_info({table_name})")
     columns = {row[1]: row[2] for row in cursor.fetchall()}
 
@@ -46,26 +39,16 @@ def get_table_info(conn: sqlite3.Connection, table_name: str) -> TableInfo:
 
 
 def get_all_tables(conn: sqlite3.Connection) -> list[str]:
-    """Get list of all table names in database."""
     cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
     return [row[0] for row in cursor.fetchall()]
 
 
 def get_all_indexes(conn: sqlite3.Connection) -> list[str]:
-    """Get list of all index names in database."""
     cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='index' ORDER BY name")
     return [row[0] for row in cursor.fetchall()]
 
 
 def validate_schema(db_path: str | Path) -> ValidationResult:
-    """Validate that a database has the correct iMessage schema.
-
-    Args:
-        db_path: Path to the database to validate
-
-    Returns:
-        ValidationResult with is_valid flag and any errors/warnings
-    """
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -174,7 +157,6 @@ def validate_schema(db_path: str | Path) -> ValidationResult:
 
 
 def validate_foreign_keys(db_path: str | Path) -> ValidationResult:
-    """Validate foreign key integrity in the database."""
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -246,7 +228,6 @@ def validate_foreign_keys(db_path: str | Path) -> ValidationResult:
 
 
 def validate_guid_uniqueness(db_path: str | Path) -> ValidationResult:
-    """Validate that all GUIDs are unique within their tables."""
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -303,10 +284,6 @@ def validate_guid_uniqueness(db_path: str | Path) -> ValidationResult:
 
 
 def validate_database(db_path: str | Path) -> ValidationResult:
-    """Run all validations on a database.
-
-    Combines schema validation, foreign key integrity, and GUID uniqueness.
-    """
     result = ValidationResult(is_valid=True)
 
     schema_result = validate_schema(db_path)
@@ -326,10 +303,6 @@ def compare_schemas(
     generated_path: str | Path,
     reference_path: str | Path,
 ) -> ValidationResult:
-    """Compare generated schema against a reference database.
-
-    Useful for validating against a real chat.db dump.
-    """
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -380,7 +353,6 @@ def compare_schemas(
 
 
 def run_integrity_check(db_path: str | Path) -> ValidationResult:
-    """Run SQLite integrity check on the database."""
     errors: list[str] = []
     warnings: list[str] = []
 

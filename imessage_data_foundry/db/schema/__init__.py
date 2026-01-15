@@ -1,5 +1,3 @@
-"""Schema modules for different macOS versions."""
-
 from imessage_data_foundry.db.schema import sequoia, sonoma, tahoe
 from imessage_data_foundry.db.schema.base import (
     SchemaVersion,

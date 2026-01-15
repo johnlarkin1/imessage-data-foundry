@@ -1,50 +1,27 @@
-"""Common schema elements and type definitions for iMessage database schemas."""
-
 from enum import Enum
 from uuid import uuid4
 
 
 class SchemaVersion(str, Enum):
-    """Supported macOS schema versions."""
-
     SONOMA = "sonoma"
     SEQUOIA = "sequoia"
     TAHOE = "tahoe"
 
 
-# GUID generation utilities
-
-
 def generate_message_guid() -> str:
-    """Generate a unique message GUID in the format p:0/{uuid}."""
     return f"p:0/{uuid4()!s}"
 
 
 def generate_chat_guid(service: str, chat_type: str, identifier: str) -> str:
-    """Generate a chat GUID.
-
-    Args:
-        service: "iMessage" or "SMS"
-        chat_type: "direct" for 1:1 or "group" for group chats
-        identifier: Phone number, email, or group chat ID
-
-    Returns:
-        GUID in format "{service};{-|+};{identifier}"
-    """
     separator = "-" if chat_type == "direct" else "+"
     return f"{service};{separator};{identifier}"
 
 
 def generate_attachment_guid() -> str:
-    """Generate a unique attachment GUID in the format at_0_{uuid}."""
     return f"at_0_{uuid4()!s}"
 
 
-# Common table generators (identical across versions)
-
-
 def generate_handle_table() -> str:
-    """Generate handle table CREATE statement."""
     return """CREATE TABLE handle (
     ROWID INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
     id TEXT NOT NULL,
@@ -57,7 +34,6 @@ def generate_handle_table() -> str:
 
 
 def generate_chat_table() -> str:
-    """Generate chat table CREATE statement."""
     return """CREATE TABLE chat (
     ROWID INTEGER PRIMARY KEY AUTOINCREMENT,
     guid TEXT UNIQUE NOT NULL,
@@ -94,7 +70,6 @@ def generate_chat_table() -> str:
 
 
 def generate_deleted_messages_table() -> str:
-    """Generate deleted_messages table CREATE statement."""
     return """CREATE TABLE deleted_messages (
     ROWID INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
     guid TEXT NOT NULL
@@ -102,12 +77,10 @@ def generate_deleted_messages_table() -> str:
 
 
 def generate_properties_table() -> str:
-    """Generate _SqliteDatabaseProperties table CREATE statement."""
     return "CREATE TABLE _SqliteDatabaseProperties (key TEXT, value TEXT, UNIQUE(key))"
 
 
 def generate_join_tables() -> dict[str, str]:
-    """Generate all join table CREATE statements."""
     return {
         "chat_handle_join": """CREATE TABLE chat_handle_join (
     chat_id INTEGER REFERENCES chat (ROWID) ON DELETE CASCADE,
@@ -128,11 +101,7 @@ def generate_join_tables() -> dict[str, str]:
     }
 
 
-# Additional sync/recovery tables (common across versions)
-
-
 def generate_sync_tables() -> dict[str, str]:
-    """Generate sync-related tables for CloudKit sync."""
     return {
         "sync_deleted_messages": """CREATE TABLE sync_deleted_messages (
     ROWID INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
@@ -154,7 +123,6 @@ def generate_sync_tables() -> dict[str, str]:
 
 
 def generate_recovery_tables() -> dict[str, str]:
-    """Generate message recovery tables."""
     return {
         "chat_recoverable_message_join": """CREATE TABLE chat_recoverable_message_join (
     chat_id INTEGER REFERENCES chat (ROWID) ON DELETE CASCADE,
@@ -184,7 +152,6 @@ def generate_recovery_tables() -> dict[str, str]:
 
 
 def generate_utility_tables() -> dict[str, str]:
-    """Generate utility tables (kvtable, message_processing_task, etc)."""
     return {
         "kvtable": """CREATE TABLE kvtable (
     ROWID INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
@@ -204,11 +171,7 @@ def generate_utility_tables() -> dict[str, str]:
     }
 
 
-# Common indexes (subset that applies to all versions)
-
-
 def generate_common_indexes() -> list[str]:
-    """Generate common index CREATE statements."""
     return [
         "CREATE INDEX chat_handle_join_idx_handle_id ON chat_handle_join(handle_id)",
         "CREATE INDEX chat_message_join_idx_chat_id ON chat_message_join(chat_id)",
