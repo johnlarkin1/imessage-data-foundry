@@ -1,5 +1,3 @@
-"""Tests for Apple timestamp utilities."""
-
 from datetime import UTC, datetime
 
 from imessage_data_foundry.utils.apple_time import (

@@ -1,5 +1,3 @@
-"""Pydantic models for Message, Chat, Handle, and Attachment."""
-
 from typing import Self
 from uuid import uuid4
 

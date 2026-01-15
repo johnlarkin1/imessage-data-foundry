@@ -1,23 +1,20 @@
-"""Anthropic API LLM provider."""
-
-from __future__ import annotations
-
 import json
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+from anthropic import AsyncAnthropic
 
 from imessage_data_foundry.llm.base import LLMProvider
 from imessage_data_foundry.llm.config import LLMConfig
-from imessage_data_foundry.llm.models import GeneratedMessage, GeneratedPersona, PersonaConstraints
+from imessage_data_foundry.llm.models import (
+    GeneratedMessage,
+    GeneratedPersona,
+    PersonaConstraints,
+)
 from imessage_data_foundry.llm.prompts import PromptTemplates
-
-if TYPE_CHECKING:
-    from anthropic import AsyncAnthropic
 
 
 class AnthropicProvider(LLMProvider):
-    """Anthropic API LLM provider."""
-
     def __init__(self, config: LLMConfig | None = None):
         self.config = config or LLMConfig()
         self._client: AsyncAnthropic | None = None
@@ -35,8 +32,6 @@ class AnthropicProvider(LLMProvider):
 
     def _get_client(self) -> AsyncAnthropic:
         if self._client is None:
-            from anthropic import AsyncAnthropic
-
             self._client = AsyncAnthropic(api_key=self.config.anthropic_api_key)
         return self._client
 

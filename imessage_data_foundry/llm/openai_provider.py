@@ -1,22 +1,14 @@
-"""OpenAI API LLM provider."""
-
-from __future__ import annotations
-
 import json
-from typing import TYPE_CHECKING
+
+from openai import AsyncOpenAI
 
 from imessage_data_foundry.llm.base import LLMProvider
 from imessage_data_foundry.llm.config import LLMConfig
 from imessage_data_foundry.llm.models import GeneratedMessage, GeneratedPersona, PersonaConstraints
 from imessage_data_foundry.llm.prompts import PromptTemplates
 
-if TYPE_CHECKING:
-    from openai import AsyncOpenAI
-
 
 class OpenAIProvider(LLMProvider):
-    """OpenAI API LLM provider."""
-
     def __init__(self, config: LLMConfig | None = None):
         self.config = config or LLMConfig()
         self._client: AsyncOpenAI | None = None
@@ -34,8 +26,6 @@ class OpenAIProvider(LLMProvider):
 
     def _get_client(self) -> AsyncOpenAI:
         if self._client is None:
-            from openai import AsyncOpenAI
-
             self._client = AsyncOpenAI(api_key=self.config.openai_api_key)
         return self._client
 

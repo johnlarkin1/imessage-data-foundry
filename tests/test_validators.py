@@ -1,5 +1,3 @@
-"""Tests for database validators."""
-
 import sqlite3
 from pathlib import Path
 

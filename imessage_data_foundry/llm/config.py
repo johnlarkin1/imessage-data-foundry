@@ -1,8 +1,7 @@
-"""LLM configuration using pydantic-settings."""
-
 from enum import Enum
 from pathlib import Path
 
+import psutil
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -28,12 +27,7 @@ MODEL_MAP: dict[LocalModelSize, str] = {
 
 
 def get_system_ram_gb() -> float:
-    try:
-        import psutil
-
-        return psutil.virtual_memory().total / (1024**3)
-    except ImportError:
-        return 8.0
+    return psutil.virtual_memory().total / (1024**3)
 
 
 def auto_select_model_size() -> LocalModelSize:

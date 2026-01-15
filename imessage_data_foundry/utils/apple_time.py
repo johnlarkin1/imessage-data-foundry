@@ -1,5 +1,3 @@
-"""Apple epoch timestamp utilities for iMessage database compatibility."""
-
 from datetime import UTC, datetime
 
 APPLE_EPOCH_OFFSET: int = 978307200

@@ -1,5 +1,3 @@
-"""Tests for LLM provider manager."""
-
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

@@ -1,5 +1,3 @@
-"""Tests for DatabaseBuilder class."""
-
 import sqlite3
 from pathlib import Path
 

@@ -1,5 +1,3 @@
-"""Tests for LLM prompt templates."""
-
 from imessage_data_foundry.llm.models import GeneratedMessage, PersonaConstraints
 from imessage_data_foundry.llm.prompts import PERSONA_JSON_SCHEMA, PromptTemplates
 from imessage_data_foundry.personas.models import (

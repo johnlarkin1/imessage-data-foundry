@@ -1,5 +1,3 @@
-"""Pydantic models for LLM generation."""
-
 from pydantic import BaseModel, Field
 
 from imessage_data_foundry.personas.models import (

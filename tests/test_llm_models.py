@@ -1,5 +1,3 @@
-"""Tests for LLM models."""
-
 import pytest
 from pydantic import ValidationError
 

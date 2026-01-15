@@ -1,5 +1,3 @@
-"""Tests for Persona Pydantic models."""
-
 from datetime import UTC, datetime
 
 import pytest

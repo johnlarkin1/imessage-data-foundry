@@ -1,5 +1,3 @@
-"""Prompt templates for persona and message generation."""
-
 import json
 from textwrap import dedent
 

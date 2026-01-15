@@ -1,24 +1,19 @@
-"""Local MLX-based LLM provider for Apple Silicon."""
-
-from __future__ import annotations
-
 import asyncio
 import json
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+from mlx_lm import generate as mlx_generate
+from mlx_lm import load as mlx_load
+from mlx_lm.tokenizer_utils import TokenizerWrapper
 
 from imessage_data_foundry.llm.base import LLMProvider
 from imessage_data_foundry.llm.config import LLMConfig
 from imessage_data_foundry.llm.models import GeneratedMessage, GeneratedPersona, PersonaConstraints
 from imessage_data_foundry.llm.prompts import PromptTemplates
 
-if TYPE_CHECKING:
-    from mlx_lm.tokenizer_utils import TokenizerWrapper
-
 
 class LocalMLXProvider(LLMProvider):
-    """Local LLM provider using MLX on Apple Silicon."""
-
     def __init__(self, config: LLMConfig | None = None):
         self.config = config or LLMConfig()
         self._model: Any = None
@@ -34,12 +29,7 @@ class LocalMLXProvider(LLMProvider):
         return False
 
     async def is_available(self) -> bool:
-        try:
-            import mlx_lm  # noqa: F401
-
-            return True
-        except ImportError:
-            return False
+        return True
 
     async def _ensure_model_loaded(self) -> None:
         if self._model is not None:
@@ -49,14 +39,10 @@ class LocalMLXProvider(LLMProvider):
         self._model, self._tokenizer = await loop.run_in_executor(None, self._load_model)
 
     def _load_model(self) -> tuple[Any, Any]:
-        from mlx_lm import load
-
-        result = load(self._model_id)
+        result = mlx_load(self._model_id)
         return result[0], result[1]
 
     def _generate_sync(self, prompt: str, max_tokens: int) -> str:
-        from mlx_lm import generate
-
         if self._tokenizer is None or self._model is None:
             raise RuntimeError("Model not loaded")
 
@@ -65,7 +51,7 @@ class LocalMLXProvider(LLMProvider):
             messages, tokenize=False, add_generation_prompt=True
         )
 
-        response = generate(
+        response = mlx_generate(
             self._model,
             self._tokenizer,
             prompt=formatted,
