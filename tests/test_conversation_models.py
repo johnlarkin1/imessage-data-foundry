@@ -1,5 +1,3 @@
-"""Tests for conversation-related Pydantic models."""
-
 from imessage_data_foundry.conversations.models import Attachment, Chat, Handle, Message
 from imessage_data_foundry.personas.models import IdentifierType, Persona
 

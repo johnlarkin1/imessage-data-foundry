@@ -1,5 +1,3 @@
-"""Pydantic models for Persona and ConversationConfig."""
-
 from datetime import UTC, datetime
 from enum import Enum
 from uuid import uuid4

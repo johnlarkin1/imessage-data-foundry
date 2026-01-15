@@ -1,5 +1,3 @@
-"""Tests for phone number utilities."""
-
 import pytest
 from phonenumbers.phonenumberutil import NumberParseException
 

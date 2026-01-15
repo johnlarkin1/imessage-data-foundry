@@ -1,5 +1,3 @@
-"""Tests for schema base utilities."""
-
 from imessage_data_foundry.db.schema.base import (
     SchemaVersion,
     generate_attachment_guid,

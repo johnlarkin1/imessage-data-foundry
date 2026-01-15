@@ -1,5 +1,3 @@
-"""Tests for macOS version detection."""
-
 from imessage_data_foundry.db.schema.base import SchemaVersion
 from imessage_data_foundry.db.version_detect import (
     detect_schema_version,

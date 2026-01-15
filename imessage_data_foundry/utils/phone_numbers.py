@@ -1,5 +1,3 @@
-"""Phone number formatting, validation, and generation utilities."""
-
 import phonenumbers
 from faker import Faker
 from phonenumbers import PhoneNumber, PhoneNumberFormat
