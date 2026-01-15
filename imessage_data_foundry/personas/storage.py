@@ -74,6 +74,16 @@ def get_default_db_path() -> Path:
 class PersonaStorage:
     """SQLite-based storage for personas."""
 
+    _INSERT_SQL = """
+        INSERT INTO personas (
+            id, name, identifier, identifier_type, country_code,
+            personality, writing_style, relationship,
+            communication_frequency, typical_response_time,
+            emoji_usage, vocabulary_level, topics_of_interest,
+            is_self, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """
+
     def __init__(self, db_path: str | Path | None = None) -> None:
         self.db_path = Path(db_path) if db_path else get_default_db_path()
         self._connection: sqlite3.Connection | None = None
@@ -103,24 +113,10 @@ class PersonaStorage:
         self.close()
 
     def create(self, persona: Persona) -> Persona:
-        """Create a new persona. Returns the created persona."""
-        self.connection.execute(
-            """
-            INSERT INTO personas (
-                id, name, identifier, identifier_type, country_code,
-                personality, writing_style, relationship,
-                communication_frequency, typical_response_time,
-                emoji_usage, vocabulary_level, topics_of_interest,
-                is_self, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            self._persona_to_row(persona),
-        )
-        self.connection.commit()
-        return persona
+        return self.create_many([persona])[0]
 
     def get(self, persona_id: str) -> Persona:
-        """Get a persona by ID. Raises PersonaNotFoundError if not found."""
+        """Raises PersonaNotFoundError if not found."""
         cursor = self.connection.execute("SELECT * FROM personas WHERE id = ?", (persona_id,))
         row = cursor.fetchone()
         if row is None:
@@ -178,42 +174,27 @@ class PersonaStorage:
         return persona
 
     def delete(self, persona_id: str) -> None:
-        """Delete a persona by ID. Raises PersonaNotFoundError if not found."""
+        """Raises PersonaNotFoundError if not found."""
         cursor = self.connection.execute("DELETE FROM personas WHERE id = ?", (persona_id,))
         if cursor.rowcount == 0:
             raise PersonaNotFoundError(f"Persona not found: {persona_id}")
         self.connection.commit()
 
     def list_all(self) -> list[Persona]:
-        """List all personas, ordered by name."""
         cursor = self.connection.execute("SELECT * FROM personas ORDER BY name")
         return [self._row_to_persona(row) for row in cursor.fetchall()]
 
     def count(self) -> int:
-        """Return the total number of personas."""
         cursor = self.connection.execute("SELECT COUNT(*) FROM personas")
         return cursor.fetchone()[0]
 
     def exists(self, persona_id: str) -> bool:
-        """Check if a persona exists."""
         cursor = self.connection.execute("SELECT 1 FROM personas WHERE id = ?", (persona_id,))
         return cursor.fetchone() is not None
 
     def create_many(self, personas: list[Persona]) -> list[Persona]:
-        """Create multiple personas in a single transaction."""
         rows = [self._persona_to_row(p) for p in personas]
-        self.connection.executemany(
-            """
-            INSERT INTO personas (
-                id, name, identifier, identifier_type, country_code,
-                personality, writing_style, relationship,
-                communication_frequency, typical_response_time,
-                emoji_usage, vocabulary_level, topics_of_interest,
-                is_self, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            rows,
-        )
+        self.connection.executemany(self._INSERT_SQL, rows)
         self.connection.commit()
         return personas
 
@@ -274,8 +255,8 @@ class PersonaStorage:
             identifier_type=IdentifierType(row["identifier_type"]),
             country_code=row["country_code"],
             personality=row["personality"] or "",
-            writing_style=row["writing_style"] or "casual",
-            relationship=row["relationship"] or "friend",
+            writing_style=row["writing_style"] or "",
+            relationship=row["relationship"] or "",
             communication_frequency=CommunicationFrequency(row["communication_frequency"]),
             typical_response_time=ResponseTime(row["typical_response_time"]),
             emoji_usage=EmojiUsage(row["emoji_usage"]),
