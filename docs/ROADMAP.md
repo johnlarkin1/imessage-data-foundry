@@ -8,8 +8,9 @@
 - ✅ **Phase 2: Database Layer** — Complete
 - ✅ **Phase 3: Persona System** — Complete
 - ✅ **Phase 4: LLM Integration** — Complete
-- 🔲 Phase 5: Conversation Generation — **Up Next**
-- 🔲 Phase 6-7: Remaining functionality
+- ✅ **Phase 5: Conversation Generation** — Complete
+- 🔲 Phase 6: TUI Application — **Up Next**
+- 🔲 Phase 7: Testing & Polish
 
 ---
 
@@ -160,21 +161,59 @@ async def generate():
 
 ---
 
-## 🔲 Phase 5: Conversation Generation (UP NEXT)
+## ✅ Phase 5: Conversation Generation (COMPLETE)
 
 **Goal:** Generate realistic message threads with proper timestamps.
 
-| Task | File | Description |
-|------|------|-------------|
-| 5.1 | `conversations/timestamps.py` | Realistic timestamp distribution algorithm |
-| 5.2 | `conversations/generator.py` | Orchestrates LLM calls, batch generation |
-| 5.3 | `conversations/seeding.py` | Conversation themes/seeds handling |
+| Task | File | Status | Description |
+|------|------|--------|-------------|
+| 5.1 | `conversations/timestamps.py` | ✅ | Realistic timestamp distribution algorithm |
+| 5.2 | `conversations/generator.py` | ✅ | Orchestrates LLM calls, batch generation |
+| 5.3 | `conversations/seeding.py` | ✅ | Conversation themes/seeds handling |
 
-**Key algorithm:** Timestamp generation needs:
-- Conversation sessions (clusters of 5-30 rapid messages)
+**Deliverables:**
+- `ConversationGenerator` class (~340 lines) - async batch generation with progress callbacks
+- `generate_timestamps()` function (~250 lines) - realistic timestamp distribution
+- `TimestampedMessage` dataclass - wraps GeneratedMessage with timestamp
+- 67 tests covering all components
+
+**Timestamp Algorithm:**
+- Session clustering: ~70% of messages in rapid-fire clusters (5-30 messages)
+- Circadian weighting: Peak messaging 18:00-21:00, minimal 00:00-06:00
+- Per-persona response times: INSTANT (5-60s), MINUTES (1-10min), HOURS (30min-4hr), DAYS (12hr-2days)
 - Natural gaps between sessions (hours to days)
-- Circadian weighting (fewer messages at 3am)
-- Per-persona response time variation
+
+**Capabilities:**
+- Generate conversations with realistic timing patterns
+- Progress callbacks for TUI integration
+- Exponential backoff retry on LLM failures
+- Direct database writing via `generate_to_database()`
+- Seed/theme parsing for conversation topics
+- Natural topic shift detection during generation
+
+**Example Usage:**
+```python
+from imessage_data_foundry.conversations import ConversationGenerator
+from imessage_data_foundry.llm import ProviderManager
+
+async def generate():
+    manager = ProviderManager()
+    generator = ConversationGenerator(manager)
+
+    result = await generator.generate(
+        personas=[alice, bob],
+        config=ConversationConfig(
+            participants=[alice.id, bob.id],
+            message_count_target=100,
+            time_range_start=datetime(2024, 1, 1),
+            time_range_end=datetime(2024, 1, 7),
+        ),
+        progress_callback=lambda p: print(f"{p.percent_complete:.0f}%"),
+    )
+
+    # Or write directly to database
+    result = await generator.generate_to_database(personas, config, builder)
+```
 
 ---
 
@@ -235,20 +274,22 @@ Quick validation: Generate a test DB, inspect with sqlite3
     ↓
 ✅ Phase 4 (Complete)
     ↓
-🔲 Phase 5.1 → 5.2              (Core conversation generation)
+✅ Phase 5 (Complete)
     ↓
-🔲 Phase 7.1 (basic CLI)        (End-to-end test)
+🔲 Phase 6.1 (basic CLI)        (End-to-end validation)
     ↓
-Remaining phases as needed
+🔲 Phase 6.2+ (TUI screens)     (Full TUI application)
+    ↓
+🔲 Phase 7 (Testing & Polish)
 ```
 
 ---
 
-## Immediate Next Steps (Phase 5)
+## Immediate Next Steps (Phase 6)
 
-1. **Implement `conversations/timestamps.py`** — Realistic timestamp distribution algorithm
-2. **Implement `conversations/generator.py`** — Orchestrate LLM calls, batch generation
-3. **Implement `conversations/seeding.py`** — Conversation themes/seeds handling
+1. **Implement basic CLI** (`cli.py`) — Simple command-line interface to validate full pipeline
+2. **Test with `imessage-exporter`** — Verify generated databases work with external tools
+3. **Build TUI screens** — Welcome, config, personas, conversations, generation progress
 
 ---
 
@@ -264,11 +305,11 @@ Remaining phases as needed
 | Milestone | Criteria | Status |
 |-----------|----------|--------|
 | M0: Foundation | All utility functions and models working | ✅ |
-| M1: Valid DB | Generate a DB that opens in SQLiteFlow without errors | 🔲 |
-| M2: Schema Match | Generated schema matches real `chat.db` structure | 🔲 |
-| M3: Manual Messages | Can programmatically insert messages that appear valid | 🔲 |
-| M4: LLM Messages | Can generate messages via LLM and insert them | 🔲 |
-| M5: Full Pipeline | End-to-end: personas → conversations → valid DB | 🔲 |
+| M1: Valid DB | Generate a DB that opens in SQLiteFlow without errors | ✅ |
+| M2: Schema Match | Generated schema matches real `chat.db` structure | ✅ |
+| M3: Manual Messages | Can programmatically insert messages that appear valid | ✅ |
+| M4: LLM Messages | Can generate messages via LLM and insert them | ✅ |
+| M5: Full Pipeline | End-to-end: personas → conversations → valid DB | ✅ |
 | M6: Tool Compat | Output works with `imessage-exporter` | 🔲 |
 
 ---
@@ -281,4 +322,5 @@ Remaining phases as needed
 | Phase 2 | test_schema_base.py, test_builder.py, test_validators.py, test_version_detect.py | 103 |
 | Phase 3 | test_persona_storage.py | 37 |
 | Phase 4 | test_llm_config.py, test_llm_models.py, test_llm_prompts.py, test_llm_manager.py | 65 |
-| **Total** | **13 files** | **268 tests** |
+| Phase 5 | test_timestamps.py, test_seeding.py, test_generator.py | 67 |
+| **Total** | **16 files** | **335 tests** |

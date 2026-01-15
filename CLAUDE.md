@@ -234,8 +234,27 @@ sqlite3 ~/Library/Messages/chat.db ".indexes message"
 
 ## Notes for Claude Code
 
-- **KEEP THE CODE SIMPLE** - don't use too many comments
-- **No `if TYPE_CHECKING:` pattern** — Move all imports to the top of the file. Use `from __future__ import annotations` for forward references instead of the `TYPE_CHECKING` guard.
+### Code Style Rules
+
+- **No top-level file docstrings** — Don't add module-level docstrings at the start of files
+- **Minimal comments** — Code should be self-explanatory; only comment non-obvious logic
+- **No `from __future__ import annotations`** — Use `typing.Self` for forward self-references instead
+- **All imports at top of module** — No inline imports inside functions or methods
+- **No re-exports in `__init__.py`** — Import directly from source modules to avoid circular imports
+- **Run `make lint` before committing** — Must pass ruff check, ruff format, and mypy
+
+### Import Guidelines
+
+```python
+# GOOD: Import directly from source
+from imessage_data_foundry.conversations.generator import ConversationGenerator
+
+# BAD: Import from package __init__.py re-export
+from imessage_data_foundry.conversations import ConversationGenerator
+```
+
+### Technical Guidelines
+
 - **Start with the database layer** — Everything else depends on it
 - **Use `imessage-exporter` source code as schema reference** — It's the most complete
 - **Test incrementally** — Verify each phase before moving to the next
