@@ -8,35 +8,12 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.screen import Screen
-from textual.widgets import Button, Footer, Label, Static
+from textual.widgets import Button, Footer
 
-from imessage_data_foundry.ui.state import get_step_info
+from imessage_data_foundry.ui.widgets.step_progress import StepProgressBar
 
 if TYPE_CHECKING:
     from imessage_data_foundry.ui.state import AppState
-
-
-class StepIndicator(Static):
-    """Widget showing current step in the wizard."""
-
-    DEFAULT_CSS = """
-    StepIndicator {
-        dock: top;
-        height: 3;
-        content-align: center middle;
-        background: $primary-darken-2;
-        color: $text;
-        padding: 0 2;
-    }
-    """
-
-    def __init__(self, screen_id: str) -> None:
-        super().__init__()
-        self.screen_id = screen_id
-
-    def compose(self) -> ComposeResult:
-        step, total, title = get_step_info(self.screen_id)
-        yield Label(f"Step {step} of {total}: {title}", id="step-label")
 
 
 class WizardScreen(Screen):
@@ -62,13 +39,15 @@ class WizardScreen(Screen):
         return self.app.state  # type: ignore[attr-defined]
 
     def compose(self) -> ComposeResult:
-        yield StepIndicator(self.SCREEN_ID)
+        yield StepProgressBar(self.SCREEN_ID)
         with Container(id="screen-body"):
             yield from self.body()
         yield Footer()
 
     def body(self) -> ComposeResult:
         """Override to provide screen-specific content."""
+        from textual.widgets import Label
+
         yield Label("Override body() in subclass")
 
     def action_back(self) -> None:
@@ -86,19 +65,6 @@ class WizardScreen(Screen):
 class NavigationBar(Horizontal):
     """Bottom navigation bar with Back/Next buttons."""
 
-    DEFAULT_CSS = """
-    NavigationBar {
-        dock: bottom;
-        height: 3;
-        padding: 0 2;
-        align: right middle;
-    }
-
-    NavigationBar Button {
-        margin: 0 1;
-    }
-    """
-
     def __init__(
         self,
         show_back: bool = True,
@@ -113,8 +79,6 @@ class NavigationBar(Horizontal):
         self.next_disabled = next_disabled
 
     def compose(self) -> ComposeResult:
-        from textual.widgets import Button
-
         if self.show_back:
             yield Button("Back", id="nav-back", variant="default")
         if self.show_next:

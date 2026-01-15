@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.widgets import Button, Checkbox, Input, Label, Select, Static, TextArea
 
+from imessage_data_foundry.llm.manager import ProviderManager
+from imessage_data_foundry.llm.models import PersonaConstraints
 from imessage_data_foundry.personas.models import (
     CommunicationFrequency,
     EmojiUsage,
@@ -17,36 +20,11 @@ from imessage_data_foundry.personas.models import (
 from imessage_data_foundry.personas.storage import PersonaStorage
 from imessage_data_foundry.ui.screens.base import NavigationBar, WizardScreen
 from imessage_data_foundry.ui.state import Screen
+from imessage_data_foundry.ui.widgets import AvatarCircle
 
 
 class PersonaCard(Static):
-    """Widget displaying a persona with selection checkbox."""
-
-    DEFAULT_CSS = """
-    PersonaCard {
-        height: auto;
-        padding: 1;
-        margin: 0 0 1 0;
-        border: solid $primary;
-    }
-    PersonaCard.selected {
-        border: double $success;
-        background: $success-darken-3;
-    }
-    PersonaCard .persona-header {
-        height: 1;
-    }
-    PersonaCard .persona-name {
-        text-style: bold;
-    }
-    PersonaCard .persona-details {
-        color: $text-muted;
-    }
-    PersonaCard .self-badge {
-        color: $warning;
-        text-style: bold;
-    }
-    """
+    """Widget displaying a persona with selection checkbox and avatar."""
 
     def __init__(self, persona: Persona, is_selected: bool = False) -> None:
         super().__init__()
@@ -57,46 +35,45 @@ class PersonaCard(Static):
 
     def compose(self) -> ComposeResult:
         p = self.persona
-        with Horizontal(classes="persona-header"):
-            yield Checkbox(
-                p.name,
-                value=self._is_selected,
-                id=f"select-{p.id}",
-            )
-            if p.is_self:
-                yield Label(" [SELF]", classes="self-badge")
-        yield Label(f"  {p.display_identifier} | {p.relationship}", classes="persona-details")
-        if p.personality:
-            preview = p.personality[:60] + "..." if len(p.personality) > 60 else p.personality
-            yield Label(f"  {preview}", classes="persona-details")
+        with Horizontal(classes="persona-row"):
+            with Container(classes="avatar-section"):
+                yield AvatarCircle(p.name, p.is_self)
+            with Vertical(classes="info-section"):
+                with Horizontal(classes="persona-header"):
+                    yield Checkbox(
+                        p.name,
+                        value=self._is_selected,
+                        id=f"select-{p.id}",
+                        classes="persona-name",
+                    )
+                    if p.is_self:
+                        yield Label("YOU", classes="self-badge")
+                yield Label(
+                    f"{p.display_identifier}  |  {p.relationship}",
+                    classes="persona-identifier",
+                )
+                if p.personality:
+                    preview = (
+                        p.personality[:50] + "..." if len(p.personality) > 50 else p.personality
+                    )
+                    yield Label(preview, classes="persona-details")
 
 
-class CreatePersonaForm(Container):
+class CreatePersonaForm(VerticalScroll):
     """Form for creating a new persona."""
 
-    DEFAULT_CSS = """
-    CreatePersonaForm {
-        height: auto;
-        padding: 1;
-        border: solid $primary;
-        margin: 1;
-    }
-    CreatePersonaForm Label {
-        margin-top: 1;
-    }
-    CreatePersonaForm Input, CreatePersonaForm Select, CreatePersonaForm TextArea {
-        margin-bottom: 1;
-    }
-    """
-
     def compose(self) -> ComposeResult:
-        yield Label("Create New Persona", classes="section-label")
+        yield Label("Create New Persona", classes="form-title")
+        yield Label(
+            "[dim]Fill in details manually or use AI to generate[/]",
+            classes="form-subtitle",
+        )
 
         yield Label("Name *")
-        yield Input(placeholder="Alice", id="persona-name")
+        yield Input(placeholder="e.g. Alice Smith", id="persona-name")
 
-        yield Label("Identifier * (phone or email)")
-        yield Input(placeholder="+15551234567", id="persona-identifier")
+        yield Label("Phone/Email *")
+        yield Input(placeholder="e.g. +15551234567", id="persona-identifier")
 
         yield Label("Identifier Type")
         yield Select(
@@ -105,14 +82,25 @@ class CreatePersonaForm(Container):
             id="persona-id-type",
         )
 
-        yield Label("Relationship")
-        yield Input(value="friend", id="persona-relationship")
+        yield Label("Relationship to you")
+        yield Input(
+            placeholder="e.g. friend, coworker, family", value="friend", id="persona-relationship"
+        )
 
-        yield Label("Personality")
+        yield Label("Personality [dim](optional - describe their traits)[/]")
         yield TextArea(id="persona-personality")
 
+        with Horizontal(classes="field-with-action"):
+            yield Button(
+                "AI Generate", id="generate-fields-btn", variant="primary", classes="small-btn"
+            )
+            yield Label("[dim]Fill personality & style using AI[/]", classes="btn-hint")
+        yield Static("", id="generate-status", classes="loading-status")
+
         yield Label("Writing Style")
-        yield Input(value="casual", id="persona-style")
+        yield Input(
+            placeholder="e.g. casual, formal, uses slang", value="casual", id="persona-style"
+        )
 
         yield Label("Communication Frequency")
         yield Select(
@@ -142,10 +130,13 @@ class CreatePersonaForm(Container):
             id="persona-vocabulary",
         )
 
-        yield Checkbox("This is me (self)", id="persona-is-self")
+        yield Checkbox("This is me (the 'self' in conversations)", id="persona-is-self")
 
-        with Horizontal():
+        yield Static("")  # Spacer
+
+        with Horizontal(classes="form-actions"):
             yield Button("Create", id="create-persona-btn", variant="primary")
+            yield Button("AI Create All", id="auto-generate-btn", variant="success")
             yield Button("Cancel", id="cancel-create-btn", variant="default")
 
 
@@ -195,7 +186,7 @@ class PersonasScreen(WizardScreen):
         if not self._personas:
             personas_list.mount(
                 Static(
-                    "No personas found. Create one to get started.",
+                    "No personas found.\nCreate one to get started.",
                     id="no-personas",
                 )
             )
@@ -225,13 +216,11 @@ class PersonasScreen(WizardScreen):
             if not selected_ids:
                 hint.update("Select at least 2 personas (one must be marked as 'self')")
             elif not has_self:
-                hint.update(
-                    f"[yellow]{len(selected_ids)} selected - need one marked as 'self'[/yellow]"
-                )
+                hint.update(f"[#FF9500]{len(selected_ids)} selected - need one marked as 'self'[/]")
             elif not has_enough:
-                hint.update(f"[yellow]{len(selected_ids)} selected - need at least 2[/yellow]")
+                hint.update(f"[#FF9500]{len(selected_ids)} selected - need at least 2[/]")
             else:
-                hint.update(f"[green]{len(selected_ids)} personas selected[/green]")
+                hint.update(f"[#34C759]{len(selected_ids)} personas selected[/]")
         except Exception:
             pass
 
@@ -266,15 +255,167 @@ class PersonasScreen(WizardScreen):
             self._load_personas()
         elif event.button.id == "create-persona-btn":
             self._create_persona()
+        elif event.button.id == "generate-fields-btn":
+            self._generate_persona_fields()
+        elif event.button.id == "auto-generate-btn":
+            self._auto_generate_persona()
 
     def _toggle_create_form(self, show: bool) -> None:
         form_panel = self.query_one("#create-form-panel", Container)
         form_panel.remove_children()
         if show:
             form_panel.mount(CreatePersonaForm())
+            self.call_after_refresh(self._focus_form_name)
         else:
             form_panel.mount(Static("", id="form-placeholder"))
         self._show_create_form = show
+
+    def _focus_form_name(self) -> None:
+        try:
+            name_input = self.query_one("#persona-name", Input)
+            name_input.focus()
+        except Exception:
+            pass
+
+    @work(exclusive=True, group="llm-generate")
+    async def _generate_persona_fields(self) -> None:
+        """Generate personality and style fields using LLM."""
+        import random
+
+        try:
+            status = self.query_one("#generate-status", Static)
+            status.update("[#007AFF]Generating with AI...[/]")
+        except Exception:
+            return
+
+        try:
+            name_input = self.query_one("#persona-name", Input)
+            relationship = self.query_one("#persona-relationship", Input).value.strip()
+
+            constraints = PersonaConstraints(
+                relationship=relationship if relationship else "friend",
+            )
+
+            provider_type = getattr(self.state, "provider_type", None)
+            manager = ProviderManager()
+            provider = await manager.get_provider(provider_type)
+
+            personas = await provider.generate_personas(constraints=constraints, count=1)
+
+            if personas:
+                generated = personas[0]
+
+                # Fill name if empty
+                if not name_input.value.strip():
+                    name_input.value = generated.name
+
+                # Fill identifier if empty
+                identifier_input = self.query_one("#persona-identifier", Input)
+                if not identifier_input.value.strip():
+                    identifier_input.value = f"+1555{random.randint(1000000, 9999999)}"
+
+                # Fill relationship if default
+                relationship_input = self.query_one("#persona-relationship", Input)
+                if (
+                    relationship_input.value.strip() == "friend"
+                    or not relationship_input.value.strip()
+                ):
+                    relationship_input.value = generated.relationship
+
+                personality_area = self.query_one("#persona-personality", TextArea)
+                personality_area.load_text(generated.personality)
+
+                style_input = self.query_one("#persona-style", Input)
+                style_input.value = generated.writing_style
+
+                freq_select = self.query_one("#persona-frequency", Select)
+                freq_select.value = generated.communication_frequency
+
+                emoji_select = self.query_one("#persona-emoji", Select)
+                emoji_select.value = generated.emoji_usage
+
+                vocab_select = self.query_one("#persona-vocabulary", Select)
+                vocab_select.value = generated.vocabulary_level
+
+                resp_select = self.query_one("#persona-response-time", Select)
+                resp_select.value = generated.typical_response_time
+
+                status.update("[#34C759]Done! Review and click Create[/]")
+            else:
+                status.update("[#FF3B30]Generation failed[/]")
+
+        except Exception as e:
+            try:
+                status = self.query_one("#generate-status", Static)
+                status.update(f"[#FF3B30]Error: {e!s}[/]")
+            except Exception:
+                self.notify(f"Generation error: {e}", severity="error")
+
+    @work(exclusive=True, group="llm-generate")
+    async def _auto_generate_persona(self) -> None:
+        """Auto-generate a complete persona with LLM."""
+        import random
+
+        try:
+            status = self.query_one("#generate-status", Static)
+            status.update("[#007AFF]Generating complete persona...[/]")
+        except Exception:
+            return
+
+        try:
+            relationship = self.query_one("#persona-relationship", Input).value.strip()
+            is_self = self.query_one("#persona-is-self", Checkbox).value
+
+            constraints = PersonaConstraints(
+                relationship="self" if is_self else (relationship or "friend"),
+            )
+
+            provider_type = getattr(self.state, "provider_type", None)
+            manager = ProviderManager()
+            provider = await manager.get_provider(provider_type)
+
+            personas = await provider.generate_personas(constraints=constraints, count=1)
+
+            if personas:
+                generated = personas[0]
+
+                name_input = self.query_one("#persona-name", Input)
+                name_input.value = generated.name
+
+                identifier_input = self.query_one("#persona-identifier", Input)
+                identifier_input.value = f"+1555{random.randint(1000000, 9999999)}"
+
+                personality_area = self.query_one("#persona-personality", TextArea)
+                personality_area.load_text(generated.personality)
+
+                style_input = self.query_one("#persona-style", Input)
+                style_input.value = generated.writing_style
+
+                relationship_input = self.query_one("#persona-relationship", Input)
+                relationship_input.value = generated.relationship
+
+                freq_select = self.query_one("#persona-frequency", Select)
+                freq_select.value = generated.communication_frequency
+
+                emoji_select = self.query_one("#persona-emoji", Select)
+                emoji_select.value = generated.emoji_usage
+
+                vocab_select = self.query_one("#persona-vocabulary", Select)
+                vocab_select.value = generated.vocabulary_level
+
+                resp_select = self.query_one("#persona-response-time", Select)
+                resp_select.value = generated.typical_response_time
+
+                status.update("[#34C759]Generated! Review and click Create[/]")
+            else:
+                status.update("[#FF3B30]No persona generated[/]")
+
+        except Exception as e:
+            try:
+                status = self.query_one("#generate-status", Static)
+                status.update(f"[#FF3B30]Error: {e!s}[/]")
+            except Exception:
+                self.notify(f"Generation error: {e}", severity="error")
 
     def _create_persona(self) -> None:
         try:

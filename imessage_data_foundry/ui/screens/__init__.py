@@ -1,11 +1,12 @@
 """TUI screens for the wizard interface."""
 
-from imessage_data_foundry.ui.screens.base import NavigationBar, StepIndicator, WizardScreen
+from imessage_data_foundry.ui.screens.base import NavigationBar, WizardScreen
 from imessage_data_foundry.ui.screens.config import ConfigScreen
 from imessage_data_foundry.ui.screens.conversations import ConversationsScreen
 from imessage_data_foundry.ui.screens.generation import GenerationScreen
 from imessage_data_foundry.ui.screens.personas import PersonasScreen
 from imessage_data_foundry.ui.screens.welcome import WelcomeScreen
+from imessage_data_foundry.ui.widgets import StepProgressBar
 
 __all__ = [
     "ConfigScreen",
@@ -13,7 +14,7 @@ __all__ = [
     "GenerationScreen",
     "NavigationBar",
     "PersonasScreen",
-    "StepIndicator",
+    "StepProgressBar",
     "WelcomeScreen",
     "WizardScreen",
 ]

@@ -45,17 +45,48 @@ class LocalMLXProvider(LLMProvider):
         if self._model is not None:
             return
 
-        loop = asyncio.get_event_loop()
-        self._model, self._tokenizer = await loop.run_in_executor(None, self._load_model)
+        # Load synchronously to avoid Python 3.13 multiprocessing/tqdm fd issues
+        # when running inside Textual. The model loading includes HuggingFace
+        # downloads which use tqdm, and tqdm's multiprocessing lock creation
+        # fails with "bad value(s) in fds_to_keep" when Textual has control of
+        # the terminal file descriptors.
+        self._model, self._tokenizer = self._load_model()
 
     def _load_model(self) -> tuple[Any, Any]:
+        import os
+        import threading
+
         from mlx_lm import load
 
-        result = load(self._model_id)
-        return result[0], result[1]
+        # Workaround for Python 3.13 multiprocessing fd issues when running inside
+        # Textual. tqdm tries to create multiprocessing locks which fail when
+        # Textual controls terminal file descriptors. We replace the mp lock
+        # with a threading lock which doesn't have this issue.
+        import tqdm.std
+
+        original_create_mp_lock = tqdm.std.TqdmDefaultWriteLock.create_mp_lock
+
+        @classmethod
+        def patched_create_mp_lock(cls: type) -> None:
+            cls.mp_lock = threading.RLock()  # type: ignore[assignment]
+
+        tqdm.std.TqdmDefaultWriteLock.create_mp_lock = patched_create_mp_lock
+
+        old_hf_disable = os.environ.get("HF_HUB_DISABLE_PROGRESS_BARS")
+        os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+        try:
+            result = load(self._model_id)
+            return result[0], result[1]
+        finally:
+            tqdm.std.TqdmDefaultWriteLock.create_mp_lock = original_create_mp_lock
+            if old_hf_disable is None:
+                os.environ.pop("HF_HUB_DISABLE_PROGRESS_BARS", None)
+            else:
+                os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = old_hf_disable
 
     def _generate_sync(self, prompt: str, max_tokens: int) -> str:
         from mlx_lm import generate
+        from mlx_lm.sample_utils import make_sampler
 
         if self._tokenizer is None or self._model is None:
             raise RuntimeError("Model not loaded")
@@ -65,12 +96,13 @@ class LocalMLXProvider(LLMProvider):
             messages, tokenize=False, add_generation_prompt=True
         )
 
+        sampler = make_sampler(temp=self.config.temperature)
         response = generate(
             self._model,
             self._tokenizer,
             prompt=formatted,
             max_tokens=max_tokens,
-            temp=self.config.temperature,
+            sampler=sampler,
             verbose=False,
         )
         return response
@@ -93,9 +125,8 @@ class LocalMLXProvider(LLMProvider):
         await self._ensure_model_loaded()
 
         prompt = PromptTemplates.persona_generation(constraints, count)
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None, self._generate_sync, prompt, self.config.max_tokens_persona
+        response = await asyncio.to_thread(
+            self._generate_sync, prompt, self.config.max_tokens_persona
         )
 
         try:
@@ -123,9 +154,8 @@ class LocalMLXProvider(LLMProvider):
         await self._ensure_model_loaded()
 
         prompt = PromptTemplates.message_generation(persona_descriptions, context, count, seed)
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None, self._generate_sync, prompt, self.config.max_tokens_messages
+        response = await asyncio.to_thread(
+            self._generate_sync, prompt, self.config.max_tokens_messages
         )
 
         try:

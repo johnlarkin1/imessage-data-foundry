@@ -18,6 +18,7 @@ from imessage_data_foundry.personas.models import ChatType, ConversationConfig
 from imessage_data_foundry.personas.storage import PersonaStorage
 from imessage_data_foundry.ui.screens.base import WizardScreen
 from imessage_data_foundry.ui.state import Screen
+from imessage_data_foundry.ui.widgets import AnimatedSpinner
 
 
 class GenerationScreen(WizardScreen):
@@ -36,8 +37,9 @@ class GenerationScreen(WizardScreen):
 
     def body(self) -> ComposeResult:
         with Center(), Vertical(id="generation-content"):
-            yield Label("Generating Conversation", id="gen-title", classes="section-label")
-            yield Static("Initializing...", id="gen-phase")
+            yield Label("Generating Conversation", id="gen-title")
+            yield AnimatedSpinner("Initializing...", id="gen-spinner")
+            yield Static("", id="gen-phase")
             yield ProgressBar(total=100, show_eta=False, id="gen-progress")
             yield Static("", id="gen-stats")
             yield Static("", id="gen-result")
@@ -67,12 +69,13 @@ class GenerationScreen(WizardScreen):
     @work(exclusive=True)
     async def _start_generation(self) -> None:
         self._is_generating = True
+        spinner = self.query_one("#gen-spinner", AnimatedSpinner)
         phase_label = self.query_one("#gen-phase", Static)
         progress_bar = self.query_one("#gen-progress", ProgressBar)
         stats_label = self.query_one("#gen-stats", Static)
         result_label = self.query_one("#gen-result", Static)
 
-        phase_label.update("Loading personas...")
+        spinner.update_text("Loading personas...")
 
         with PersonaStorage() as storage:
             all_personas = storage.list_all()
@@ -80,8 +83,7 @@ class GenerationScreen(WizardScreen):
         selected_personas = [p for p in all_personas if p.id in self.state.selected_persona_ids]
 
         if len(selected_personas) < 2:
-            phase_label.update("[red]Error: Not enough personas selected[/red]")
-            self._finish_generation(success=False)
+            self._show_error("Not enough personas selected")
             return
 
         config = ConversationConfig(
@@ -94,7 +96,7 @@ class GenerationScreen(WizardScreen):
             service=self.state.service,
         )
 
-        phase_label.update("Connecting to LLM provider...")
+        spinner.update_text("Connecting to LLM provider...")
 
         try:
             llm_config = LLMConfig()
@@ -105,11 +107,10 @@ class GenerationScreen(WizardScreen):
             generator = ConversationGenerator(manager, llm_config)
 
         except ProviderNotAvailableError as e:
-            phase_label.update(f"[red]Provider error: {e}[/red]")
-            self._finish_generation(success=False)
+            self._show_error(f"Provider error: {e}")
             return
 
-        phase_label.update("Starting generation...")
+        spinner.update_text("Starting generation...")
 
         def on_progress(progress: GenerationProgress) -> None:
             self.call_from_thread(self._update_progress, progress)  # type: ignore[attr-defined]
@@ -130,29 +131,38 @@ class GenerationScreen(WizardScreen):
 
             self.state.generation_result = result
 
-            phase_label.update("[green]Generation complete![/green]")
+            spinner.display = False
+            phase_label.update("[#34C759 bold]Generation complete![/]")
             progress_bar.update(progress=100)
 
             stats_label.update(
-                f"Messages: {len(result.messages)} | "
-                f"Time: {result.generation_time_seconds:.1f}s | "
-                f"Provider: {result.llm_provider_used}"
+                f"[dim]Messages:[/] {len(result.messages)}  |  "
+                f"[dim]Time:[/] {result.generation_time_seconds:.1f}s  |  "
+                f"[dim]Provider:[/] {result.llm_provider_used}"
             )
 
-            result_label.update(f"[bold]Output:[/bold] {self.state.output_path.absolute()}")
+            result_label.update(
+                f"[#34C759 bold]Output saved to:[/]\n{self.state.output_path.absolute()}"
+            )
 
             self._finish_generation(success=True)
 
         except ProviderNotAvailableError as e:
-            phase_label.update(f"[red]Provider not available: {e}[/red]")
-            self._finish_generation(success=False)
+            self._show_error(f"Provider not available: {e}")
 
         except Exception as e:
-            phase_label.update(f"[red]Error: {e}[/red]")
-            self._finish_generation(success=False)
+            self._show_error(str(e))
+
+    def _show_error(self, message: str) -> None:
+        spinner = self.query_one("#gen-spinner", AnimatedSpinner)
+        phase_label = self.query_one("#gen-phase", Static)
+
+        spinner.display = False
+        phase_label.update(f"[#FF3B30 bold]Error:[/] {message}")
+        self._finish_generation(success=False)
 
     def _update_progress(self, progress: GenerationProgress) -> None:
-        phase_label = self.query_one("#gen-phase", Static)
+        spinner = self.query_one("#gen-spinner", AnimatedSpinner)
         progress_bar = self.query_one("#gen-progress", ProgressBar)
         stats_label = self.query_one("#gen-stats", Static)
 
@@ -162,13 +172,13 @@ class GenerationScreen(WizardScreen):
             "writing_database": "Writing to database",
         }
         phase_text = phase_map.get(progress.phase, progress.phase)
-        phase_label.update(f"{phase_text}...")
+        spinner.update_text(f"{phase_text}...")
 
         progress_bar.update(progress=progress.percent_complete)
 
         stats_label.update(
-            f"Batch {progress.current_batch}/{progress.total_batches} | "
-            f"{progress.generated_messages}/{progress.total_messages} messages"
+            f"[dim]Batch[/] {progress.current_batch}/{progress.total_batches}  |  "
+            f"[dim]Messages[/] {progress.generated_messages}/{progress.total_messages}"
         )
 
     def _finish_generation(self, success: bool) -> None:
@@ -187,8 +197,10 @@ class GenerationScreen(WizardScreen):
         if event.button.id == "cancel-btn":
             if self._is_generating:
                 self.workers.cancel_all()
+                spinner = self.query_one("#gen-spinner", AnimatedSpinner)
                 phase_label = self.query_one("#gen-phase", Static)
-                phase_label.update("[yellow]Cancelled[/yellow]")
+                spinner.display = False
+                phase_label.update("[#FF9500 bold]Cancelled[/]")
                 self._finish_generation(success=False)
 
         elif event.button.id == "another-btn":

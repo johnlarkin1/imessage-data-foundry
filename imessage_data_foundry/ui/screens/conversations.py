@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import contextlib
+import random
 from datetime import UTC, datetime, timedelta
 
+from textual import work
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
-from textual.widgets import Input, Label, Select, Static, TextArea
+from textual.containers import Container, Horizontal, Vertical
+from textual.widgets import Button, Input, Label, Select, Static, TextArea
 
 from imessage_data_foundry.personas.models import ChatType, ServiceType
 from imessage_data_foundry.personas.storage import PersonaStorage
 from imessage_data_foundry.ui.screens.base import NavigationBar, WizardScreen
 from imessage_data_foundry.ui.state import Screen
+from imessage_data_foundry.ui.widgets import AvatarCircle, SectionCard
 
 
 class ConversationsScreen(WizardScreen):
@@ -22,60 +25,67 @@ class ConversationsScreen(WizardScreen):
 
     def body(self) -> ComposeResult:
         with Vertical(id="conversation-config"):
-            yield Label("Selected Personas", classes="section-label")
-            yield Static("Loading...", id="selected-personas-display")
+            with (
+                SectionCard("Participants"),
+                Horizontal(id="selected-personas-display", classes="personas-row"),
+            ):
+                yield Static("Loading...", id="personas-placeholder")
 
-            yield Label("Message Count", classes="section-label")
-            yield Input(
-                str(self.state.message_count),
-                id="message-count",
-                placeholder="100",
-                type="integer",
-            )
-            yield Label("(1 - 10,000 messages)", classes="hint")
-
-            yield Label("Time Range", classes="section-label")
-            with Horizontal(id="time-range"):
-                yield Label("Days ago: ")
+            with SectionCard("Message Settings"):
+                yield Label("Message Count", classes="section-label")
                 yield Input(
-                    "30",
-                    id="days-ago",
+                    str(self.state.message_count),
+                    id="message-count",
+                    placeholder="100",
                     type="integer",
                 )
-            yield Label(
-                "Messages will be distributed across this time range",
-                classes="hint",
-            )
+                yield Label("(1 - 10,000 messages)", classes="hint")
 
-            yield Label("Chat Type", classes="section-label")
-            yield Select(
-                [
-                    ("Direct (2 people)", ChatType.DIRECT.value),
-                    ("Group chat", ChatType.GROUP.value),
-                ],
-                value=ChatType.DIRECT.value,
-                id="chat-type",
-            )
+                yield Label("Time Range", classes="section-label")
+                with Horizontal(id="time-range"):
+                    yield Label("Days ago: ")
+                    yield Input(
+                        "30",
+                        id="days-ago",
+                        type="integer",
+                    )
+                yield Label(
+                    "Messages will be distributed across this time range",
+                    classes="hint",
+                )
 
-            yield Label("Service", classes="section-label")
-            yield Select(
-                [
-                    ("iMessage", ServiceType.IMESSAGE.value),
-                    ("SMS", ServiceType.SMS.value),
-                ],
-                value=ServiceType.IMESSAGE.value,
-                id="service-type",
-            )
+            with SectionCard("Chat Options"):
+                yield Label("Chat Type", classes="section-label")
+                yield Select(
+                    [
+                        ("Direct (2 people)", ChatType.DIRECT.value),
+                        ("Group chat", ChatType.GROUP.value),
+                    ],
+                    value=ChatType.DIRECT.value,
+                    id="chat-type",
+                )
 
-            yield Label("Conversation Seed (optional)", classes="section-label")
-            yield TextArea(
-                id="conversation-seed",
-                classes="seed-input",
-            )
-            yield Label(
-                "Provide a theme or topic to guide the conversation",
-                classes="hint",
-            )
+                yield Label("Service", classes="section-label")
+                yield Select(
+                    [
+                        ("iMessage", ServiceType.IMESSAGE.value),
+                        ("SMS", ServiceType.SMS.value),
+                    ],
+                    value=ServiceType.IMESSAGE.value,
+                    id="service-type",
+                )
+
+            with SectionCard("Conversation Seed (optional)"):
+                yield Label("[dim]Give the AI a topic to discuss[/]", classes="hint")
+                yield TextArea(id="conversation-seed", classes="seed-input")
+                with Horizontal(classes="field-with-action"):
+                    yield Button(
+                        "Suggest Topic",
+                        id="suggest-seed-btn",
+                        variant="default",
+                        classes="small-btn",
+                    )
+                    yield Static("", id="seed-status", classes="loading-status")
 
             yield Static("", id="validation-message")
 
@@ -90,24 +100,24 @@ class ConversationsScreen(WizardScreen):
             all_personas = storage.list_all()
 
         selected = [p for p in all_personas if p.id in self.state.selected_persona_ids]
-        display = self.query_one("#selected-personas-display", Static)
 
-        if not selected:
-            display.update("[red]No personas selected[/red]")
-            return
+        try:
+            display = self.query_one("#selected-personas-display", Horizontal)
+            display.remove_children()
 
-        names = []
-        for p in selected:
-            if p.is_self:
-                names.append(f"[bold]{p.name}[/bold] (you)")
-            else:
-                names.append(p.name)
+            if not selected:
+                display.mount(Static("[#FF3B30]No personas selected[/]"))
+                return
 
-        display.update(" | ".join(names))
+            for p in selected:
+                with Container(classes="avatar-badge"):
+                    display.mount(AvatarCircle(p.name, p.is_self, small=False))
 
-        chat_type_select = self.query_one("#chat-type", Select)
-        if len(selected) > 2:
-            chat_type_select.value = ChatType.GROUP.value
+            chat_type_select = self.query_one("#chat-type", Select)
+            if len(selected) > 2:
+                chat_type_select.value = ChatType.GROUP.value
+        except Exception:
+            pass
 
     def _validate_config(self) -> bool:
         validation_msg = self.query_one("#validation-message", Static)
@@ -141,10 +151,10 @@ class ConversationsScreen(WizardScreen):
             pass
 
         if errors:
-            validation_msg.update("[red]" + " | ".join(errors) + "[/red]")
+            validation_msg.update("[#FF3B30]" + " | ".join(errors) + "[/]")
             return False
         else:
-            validation_msg.update("[green]Ready to generate[/green]")
+            validation_msg.update("[#34C759]Ready to generate[/]")
             return True
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -164,6 +174,78 @@ class ConversationsScreen(WizardScreen):
         if event.select.id == "service-type":
             self.state.service = ServiceType(event.value)
         self._validate_config()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "suggest-seed-btn":
+            self._suggest_seed()
+
+    @work(exclusive=True, group="seed-suggest")
+    async def _suggest_seed(self) -> None:
+        """Suggest a conversation seed based on selected personas."""
+        try:
+            status = self.query_one("#seed-status", Static)
+            status.update("[#007AFF]Thinking...[/]")
+        except Exception:
+            return
+
+        try:
+            with PersonaStorage() as storage:
+                all_personas = storage.list_all()
+            selected = [p for p in all_personas if p.id in self.state.selected_persona_ids]
+
+            seed_templates = [
+                "Catching up after not talking for a while",
+                "Making plans for the weekend",
+                "Sharing something funny that happened today",
+                "Asking for advice about a decision",
+                "Discussing a new restaurant to try",
+                "Planning a birthday surprise",
+                "Talking about a movie or TV show",
+                "Reminiscing about old memories",
+                "Venting about a frustrating day at work",
+                "Coordinating logistics for an event",
+            ]
+
+            relationships = [p.relationship for p in selected if p.relationship and not p.is_self]
+            if relationships:
+                rel = relationships[0].lower()
+                if "family" in rel or "parent" in rel or "sibling" in rel:
+                    seed_templates.extend(
+                        [
+                            "Planning a family dinner",
+                            "Discussing upcoming holidays",
+                            "Checking in on how everyone is doing",
+                        ]
+                    )
+                elif "coworker" in rel or "colleague" in rel or "work" in rel:
+                    seed_templates.extend(
+                        [
+                            "Discussing a project deadline",
+                            "Planning after-work drinks",
+                            "Venting about a difficult meeting",
+                        ]
+                    )
+                elif "friend" in rel:
+                    seed_templates.extend(
+                        [
+                            "Planning a game night",
+                            "Discussing weekend plans",
+                            "Sharing exciting news",
+                        ]
+                    )
+
+            seed = random.choice(seed_templates)
+
+            seed_area = self.query_one("#conversation-seed", TextArea)
+            seed_area.load_text(seed)
+            status.update("")
+
+        except Exception as e:
+            try:
+                status = self.query_one("#seed-status", Static)
+                status.update(f"[#FF3B30]Error: {e!s}[/]")
+            except Exception:
+                pass
 
     def _save_config(self) -> None:
         try:

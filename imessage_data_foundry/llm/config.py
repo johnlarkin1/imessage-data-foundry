@@ -23,7 +23,7 @@ class LocalModelSize(str, Enum):
 MODEL_MAP: dict[LocalModelSize, str] = {
     LocalModelSize.SMALL: "mlx-community/Llama-3.2-3B-Instruct-4bit",
     LocalModelSize.MEDIUM: "mlx-community/Qwen3-4B-Instruct-2507-4bit",
-    LocalModelSize.LARGE: "mlx-community/Qwen3-8B-Instruct-4bit",
+    LocalModelSize.LARGE: "mlx-community/Meta-Llama-3.1-8B-Instruct-4bit",
 }
 
 

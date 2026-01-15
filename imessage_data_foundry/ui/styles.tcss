@@ -1,104 +1,286 @@
-/* iMessage Data Foundry TUI Styles */
+/* iMessage Data Foundry TUI Styles - iMessage Inspired Theme */
 
-/* Global */
+/* ========================================
+   iMessage Color Palette
+   ======================================== */
+
+$imessage-blue: #007AFF;
+$imessage-blue-dark: #0056CC;
+$imessage-blue-light: #5AC8FA;
+$imessage-green: #34C759;
+$imessage-green-dark: #248A3D;
+$imessage-orange: #FF9500;
+$imessage-red: #FF3B30;
+$imessage-yellow: #FFCC00;
+
+$imessage-bg: #000000;
+$imessage-bg-elevated: #1C1C1E;
+$imessage-surface: #2C2C2E;
+$imessage-surface-elevated: #3A3A3C;
+$imessage-separator: #38383A;
+
+$imessage-text-primary: #FFFFFF;
+$imessage-text-secondary: #8E8E93;
+$imessage-text-tertiary: #636366;
+
+/* ========================================
+   Global Styles
+   ======================================== */
+
 Screen {
     layout: vertical;
-    background: $surface-darken-1;
+    background: $imessage-bg-elevated;
 }
 
 #screen-body {
+    height: 1fr;
     padding: 1 2;
 }
+
+/* ========================================
+   Typography
+   ======================================== */
 
 .section-label {
     text-style: bold;
     margin-top: 1;
-    margin-bottom: 0;
-    color: $primary-lighten-2;
+    margin-bottom: 1;
+    color: $imessage-text-primary;
 }
 
 .hint {
-    color: $text-muted;
+    color: $imessage-text-secondary;
     text-style: italic;
     margin-top: 0;
+    margin-bottom: 1;
 }
 
-/* Welcome Screen */
-#welcome-content {
-    align: center middle;
+.text-muted {
+    color: $imessage-text-secondary;
+}
+
+.text-success {
+    color: $imessage-green;
+}
+
+.text-error {
+    color: $imessage-red;
+}
+
+.text-warning {
+    color: $imessage-orange;
+}
+
+/* ========================================
+   Step Progress Bar
+   ======================================== */
+
+StepProgressBar {
+    dock: top;
+    height: 5;
+    background: $imessage-surface;
+    border-bottom: solid $imessage-separator;
+    padding: 1 2;
+}
+
+StepProgressBar .step-dots {
+    height: 1;
+    content-align: center middle;
+}
+
+StepProgressBar .step-title {
+    height: 1;
+    content-align: center middle;
+    color: $imessage-text-secondary;
+    margin-top: 1;
+}
+
+/* ========================================
+   Welcome Screen
+   ======================================== */
+
+#welcome-center {
+    width: 100%;
     height: 100%;
 }
 
-#logo {
+#welcome-content {
+    width: auto;
+    height: auto;
+    align: center middle;
+}
+
+#app-header {
     text-align: center;
-    color: $primary;
+    text-style: bold;
+    color: $imessage-blue;
+    height: auto;
+    width: 100%;
+    margin-bottom: 1;
 }
 
 #tagline {
     text-align: center;
-    color: $text-muted;
+    color: $imessage-text-secondary;
+    height: auto;
+    width: 100%;
     margin-bottom: 2;
-}
-
-#welcome-content #spacer {
-    height: 2;
-}
-
-#welcome-content #spacer2 {
-    height: 3;
 }
 
 #button-row {
     height: auto;
+    width: auto;
+    align: center middle;
+    margin-bottom: 2;
 }
 
 #button-row Button {
     margin: 0 1;
+    min-width: 18;
+}
+
+#start-wizard {
+    background: $imessage-blue;
+}
+
+#start-wizard:hover {
+    background: $imessage-blue-dark;
+}
+
+#start-wizard:focus {
+    background: $imessage-blue-dark;
+}
+
+#manage-personas {
+    background: $imessage-surface-elevated;
+    border: round $imessage-separator;
+}
+
+#manage-personas:hover {
+    background: $imessage-separator;
 }
 
 #hint {
     text-align: center;
-    color: $text-muted;
+    color: $imessage-text-tertiary;
+    height: auto;
+    width: 100%;
 }
 
-/* Config Screen */
-#config-form {
-    padding: 1 4;
-    max-width: 100;
+/* ========================================
+   Config Screen
+   ======================================== */
+
+#config-scroll {
+    height: 1fr;
+    padding: 1 2;
 }
 
-.config-section {
-    border: solid $primary-darken-2;
+#config-scroll > Center {
+    width: 100%;
+    height: auto;
+    margin-bottom: 1;
+}
+
+/* Section Card Styling */
+SectionCard {
+    background: $imessage-surface;
+    border: round $imessage-surface-elevated;
     padding: 1 2;
     margin-bottom: 1;
-    background: $surface;
+    height: auto;
+    width: 70;
+    max-width: 90%;
 }
 
-.config-section-title {
+SectionCard:focus-within {
+    border: round $imessage-blue 50%;
+}
+
+SectionCard .card-title {
     text-style: bold;
-    color: $primary-lighten-1;
+    color: $imessage-text-primary;
     margin-bottom: 1;
+    height: auto;
 }
 
-#config-form RadioSet {
-    margin-bottom: 0;
-    padding: 0 1;
-}
-
-#config-form Input {
-    margin-bottom: 0;
+SectionCard .card-content {
+    height: auto;
 }
 
 #provider-status {
-    margin-top: 1;
-    padding: 0 1;
-}
-
-#version-select {
+    margin-bottom: 1;
     padding: 0;
+    height: auto;
 }
 
-/* Personas Screen */
+/* ========================================
+   Selection Card
+   ======================================== */
+
+SelectionCard {
+    height: auto;
+    padding: 0 1;
+    margin: 0 0 1 0;
+    border: round $imessage-surface-elevated;
+    background: $imessage-surface;
+}
+
+SelectionCard:hover {
+    background: $imessage-surface-elevated;
+}
+
+SelectionCard:focus {
+    border: tall $imessage-blue;
+    background: $imessage-surface-elevated;
+}
+
+SelectionCard.selected {
+    border: round $imessage-blue;
+    background: $imessage-blue 15%;
+}
+
+SelectionCard.disabled {
+    opacity: 0.5;
+}
+
+SelectionCard .card-row {
+    height: auto;
+    padding: 1 0;
+}
+
+SelectionCard .card-icon {
+    width: 4;
+    height: auto;
+    content-align: left middle;
+}
+
+SelectionCard .card-info {
+    width: 1fr;
+    height: auto;
+}
+
+SelectionCard .card-label {
+    text-style: bold;
+    color: $imessage-text-primary;
+    height: auto;
+}
+
+SelectionCard .card-description {
+    color: $imessage-text-secondary;
+    height: auto;
+}
+
+SelectionCard .card-status {
+    width: 3;
+    height: auto;
+    content-align: right middle;
+}
+
+/* ========================================
+   Personas Screen
+   ======================================== */
+
 #personas-layout {
     height: 100%;
 }
@@ -106,13 +288,15 @@ Screen {
 #personas-list-panel {
     width: 60%;
     padding: 1;
-    border-right: solid $primary-darken-2;
+    border-right: solid $imessage-separator;
 }
 
 #create-form-panel {
     width: 40%;
-    padding: 1;
-    background: $surface;
+    padding: 0;
+    background: $imessage-bg-elevated;
+    height: 100%;
+    overflow: hidden;
 }
 
 #personas-list {
@@ -123,6 +307,7 @@ Screen {
 #personas-actions {
     height: auto;
     dock: bottom;
+    padding-top: 1;
 }
 
 #personas-actions Button {
@@ -131,53 +316,161 @@ Screen {
 
 #selection-hint {
     margin-bottom: 1;
-    color: $warning;
+    color: $imessage-text-secondary;
 }
 
 #no-personas {
-    color: $text-muted;
+    color: $imessage-text-secondary;
     text-style: italic;
+    padding: 2;
+    text-align: center;
 }
 
-/* Persona Cards */
+/* ========================================
+   Avatar Circle
+   ======================================== */
+
+AvatarCircle {
+    width: 5;
+    height: 3;
+    content-align: center middle;
+    text-style: bold;
+}
+
+AvatarCircle.small {
+    width: 3;
+    height: 1;
+}
+
+/* ========================================
+   Persona Cards
+   ======================================== */
+
 PersonaCard {
     height: auto;
-    padding: 1;
+    padding: 1 2;
     margin-bottom: 1;
-    border: solid $primary-darken-3;
-    background: $surface;
+    border: round $imessage-surface-elevated;
+    background: $imessage-surface;
+}
+
+PersonaCard:hover {
+    background: $imessage-surface-elevated;
 }
 
 PersonaCard.selected {
-    border: double $success;
-    background: $success-darken-3;
+    border: round $imessage-green;
+    background: $imessage-green 15%;
+}
+
+PersonaCard .persona-row {
+    height: auto;
+}
+
+PersonaCard .avatar-section {
+    width: 6;
+    height: auto;
+    content-align: center middle;
+}
+
+PersonaCard .info-section {
+    width: 1fr;
+    padding-left: 1;
+}
+
+PersonaCard .persona-header {
+    height: auto;
 }
 
 PersonaCard .persona-name {
     text-style: bold;
-    color: $text;
+    color: $imessage-text-primary;
 }
 
 PersonaCard .persona-identifier {
-    color: $text-muted;
+    color: $imessage-text-secondary;
 }
 
-PersonaCard .persona-self {
-    color: $warning;
-    text-style: italic;
+PersonaCard .persona-details {
+    color: $imessage-text-secondary;
 }
 
-/* Conversations Screen */
+PersonaCard .self-badge {
+    color: $imessage-blue;
+    text-style: bold;
+    margin-left: 1;
+}
+
+/* ========================================
+   Create Persona Form
+   ======================================== */
+
+CreatePersonaForm {
+    height: 1fr;
+    padding: 1 2;
+    border: round $imessage-surface-elevated;
+    background: $imessage-surface;
+    margin: 1;
+    scrollbar-gutter: stable;
+}
+
+CreatePersonaForm .form-title {
+    text-style: bold;
+    color: $imessage-text-primary;
+    margin-bottom: 0;
+}
+
+CreatePersonaForm .form-subtitle {
+    color: $imessage-text-tertiary;
+    margin-bottom: 1;
+}
+
+CreatePersonaForm .btn-hint {
+    color: $imessage-text-tertiary;
+    margin-left: 1;
+    width: auto;
+}
+
+CreatePersonaForm Label {
+    margin-top: 1;
+    color: $imessage-text-secondary;
+}
+
+CreatePersonaForm Input,
+CreatePersonaForm Select,
+CreatePersonaForm TextArea {
+    margin-bottom: 1;
+}
+
+CreatePersonaForm .form-actions {
+    margin-top: 1;
+    height: auto;
+}
+
+CreatePersonaForm .form-actions Button {
+    margin-right: 1;
+}
+
+/* ========================================
+   Conversations Screen
+   ======================================== */
+
 #conversation-config {
     padding: 1 4;
     max-width: 100;
 }
 
 #selected-personas-display {
-    border: solid $primary-darken-2;
+    border: round $imessage-surface-elevated;
     padding: 1 2;
-    margin-bottom: 1;
-    background: $surface;
+    margin-bottom: 2;
+    background: $imessage-surface;
+    height: auto;
+}
+
+#selected-personas-display .personas-row {
+    height: auto;
+    align: left middle;
 }
 
 #conversation-config Input {
@@ -205,7 +498,12 @@ PersonaCard .persona-self {
 .seed-input {
     height: 5;
     margin-bottom: 1;
-    border: solid $primary-darken-2;
+    border: round $imessage-surface-elevated;
+}
+
+.seed-input:focus {
+    border: round $imessage-blue;
+    outline: solid $imessage-blue;
 }
 
 #validation-message {
@@ -214,7 +512,10 @@ PersonaCard .persona-self {
     text-align: center;
 }
 
-/* Generation Screen */
+/* ========================================
+   Generation Screen
+   ======================================== */
+
 #generation-content {
     align: center middle;
     height: 100%;
@@ -226,71 +527,126 @@ PersonaCard .persona-self {
     text-align: center;
     text-style: bold;
     margin-bottom: 2;
-    color: $primary-lighten-1;
+    color: $imessage-text-primary;
 }
 
 #gen-phase {
     text-align: center;
     margin-bottom: 1;
+    color: $imessage-text-secondary;
 }
 
 #gen-progress {
-    margin: 1 0;
+    margin: 2 0;
     width: 100%;
+}
+
+#gen-progress ProgressBar > .bar--bar {
+    color: $imessage-blue;
+}
+
+#gen-progress ProgressBar > .bar--complete {
+    color: $imessage-green;
 }
 
 #gen-stats {
     text-align: center;
-    color: $text-muted;
+    color: $imessage-text-secondary;
     margin-bottom: 1;
 }
 
 #gen-result {
     text-align: center;
     margin-top: 2;
-    padding: 1;
-    border: solid $success-darken-2;
-    background: $success-darken-3;
+    padding: 2;
+    border: round $imessage-green;
+    background: $imessage-green 15%;
+}
+
+#gen-result .result-icon {
+    color: $imessage-green;
+    text-style: bold;
+}
+
+#gen-result .result-path {
+    color: $imessage-text-primary;
+    margin-top: 1;
 }
 
 #gen-buttons {
     margin-top: 3;
     height: auto;
+    align: center middle;
 }
 
 #gen-buttons Button {
     margin: 0 1;
+    min-width: 16;
 }
 
-/* Navigation */
+/* ========================================
+   Animated Spinner
+   ======================================== */
+
+AnimatedSpinner {
+    width: auto;
+    height: 1;
+    content-align: center middle;
+    color: $imessage-blue;
+}
+
+/* ========================================
+   Navigation Bar
+   ======================================== */
+
 NavigationBar {
     dock: bottom;
-    height: 3;
-    padding: 0 2;
+    height: 5;
+    padding: 1 2;
     align: right middle;
-    background: $surface;
-    border-top: solid $primary-darken-3;
+    background: $imessage-surface;
+    border-top: solid $imessage-separator;
 }
 
 NavigationBar Button {
     margin: 0 1;
+    min-width: 14;
 }
 
-/* Step Indicator */
-StepIndicator {
-    background: $primary-darken-1;
-    color: $text;
-    padding: 0 2;
-    text-style: bold;
+#nav-back {
+    background: $imessage-surface-elevated;
+    border: round $imessage-separator;
 }
 
-/* Form elements */
+#nav-back:hover {
+    background: $imessage-separator;
+}
+
+#nav-next {
+    background: $imessage-blue;
+}
+
+#nav-next:hover {
+    background: $imessage-blue-dark;
+}
+
+#nav-next:disabled {
+    background: $imessage-surface-elevated;
+    opacity: 0.5;
+}
+
+/* ========================================
+   Form Elements
+   ======================================== */
+
 Input {
-    border: solid $primary-darken-2;
+    border: round $imessage-surface-elevated;
+    background: $imessage-surface;
 }
 
 Input:focus {
-    border: solid $primary;
+    border: round $imessage-blue;
+    outline: solid $imessage-blue;
 }
 
 RadioSet {
@@ -303,30 +659,222 @@ RadioButton {
 }
 
 RadioButton:focus {
-    background: $primary-darken-2;
+    background: $imessage-surface-elevated;
+}
+
+RadioButton.-on {
+    color: $imessage-blue;
 }
 
 Select {
-    border: solid $primary-darken-2;
+    border: round $imessage-surface-elevated;
+    background: $imessage-surface;
 }
 
 Select:focus {
-    border: solid $primary;
+    border: round $imessage-blue;
+    outline: solid $imessage-blue;
 }
 
-/* Buttons */
+Select > SelectCurrent {
+    background: $imessage-surface;
+}
+
+Select > SelectOverlay {
+    background: $imessage-surface-elevated;
+    border: round $imessage-separator;
+}
+
+TextArea {
+    border: round $imessage-surface-elevated;
+    background: $imessage-surface;
+}
+
+TextArea:focus {
+    border: round $imessage-blue;
+    outline: solid $imessage-blue;
+}
+
+Checkbox {
+    background: transparent;
+    padding: 0 1;
+}
+
+Checkbox:focus {
+    background: $imessage-surface-elevated;
+    outline: solid $imessage-blue;
+}
+
+Checkbox.-on .toggle--button {
+    color: $imessage-blue;
+}
+
+/* ========================================
+   Buttons
+   ======================================== */
+
 Button {
     min-width: 12;
 }
 
+Button:focus {
+    text-style: bold;
+    outline: double $imessage-text-primary;
+}
+
 Button.primary {
-    background: $primary;
+    background: $imessage-blue;
+}
+
+Button.primary:hover {
+    background: $imessage-blue-dark;
 }
 
 Button.success {
-    background: $success;
+    background: $imessage-green;
+}
+
+Button.success:hover {
+    background: $imessage-green-dark;
 }
 
 Button.error {
-    background: $error;
+    background: $imessage-red;
+}
+
+Button.warning {
+    background: $imessage-orange;
+}
+
+Button.-default-button {
+    background: $imessage-surface-elevated;
+}
+
+Button.-default-button:hover {
+    background: $imessage-separator;
+}
+
+/* ========================================
+   Footer
+   ======================================== */
+
+Footer {
+    background: $imessage-surface;
+    color: $imessage-text-secondary;
+}
+
+Footer > .footer--highlight {
+    background: $imessage-blue;
+}
+
+Footer > .footer--key {
+    background: $imessage-surface-elevated;
+}
+
+/* ========================================
+   Toast / Notifications
+   ======================================== */
+
+Toast {
+    background: $imessage-surface-elevated;
+    border: round $imessage-separator;
+}
+
+Toast.-information {
+    border: round $imessage-blue;
+}
+
+Toast.-success {
+    border: round $imessage-green;
+}
+
+Toast.-warning {
+    border: round $imessage-orange;
+}
+
+Toast.-error {
+    border: round $imessage-red;
+}
+
+/* ========================================
+   Scrollbars
+   ======================================== */
+
+VerticalScroll > .scrollbar {
+    background: $imessage-surface;
+}
+
+VerticalScroll > .scrollbar--bar {
+    background: $imessage-surface-elevated;
+}
+
+VerticalScroll > .scrollbar--bar:hover {
+    background: $imessage-separator;
+}
+
+/* ========================================
+   LLM Generation UI
+   ======================================== */
+
+.field-with-action {
+    height: auto;
+    align: left middle;
+    margin-bottom: 0;
+}
+
+.field-with-action Label {
+    width: auto;
+}
+
+.small-btn {
+    min-width: 14;
+    height: 3;
+    margin-left: 2;
+    padding: 0 1;
+}
+
+TextArea.placeholder-visible {
+    color: $imessage-text-tertiary;
+}
+
+.loading-status {
+    margin-top: 0;
+    height: 1;
+    color: $imessage-blue;
+}
+
+.loading-status.error {
+    color: $imessage-red;
+}
+
+.loading-status.success {
+    color: $imessage-green;
+}
+
+/* Quick Start Button */
+#quick-start {
+    background: $imessage-green;
+}
+
+#quick-start:hover {
+    background: #2DB84D;
+}
+
+#quick-start:focus {
+    border: tall $imessage-green;
+}
+
+#quick-start-status {
+    margin-top: 1;
+    text-align: center;
+    height: 1;
+}
+
+/* Auto-generate button */
+#auto-generate-btn {
+    background: $imessage-orange;
+}
+
+#auto-generate-btn:hover {
+    background: #E68600;
 }
