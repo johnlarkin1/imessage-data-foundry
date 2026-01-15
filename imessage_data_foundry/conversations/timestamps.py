@@ -2,6 +2,15 @@ import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from imessage_data_foundry.conversations.constants import (
+    CIRCADIAN_WEIGHTS,
+    DEFAULT_CIRCADIAN_WEIGHT,
+    INSTANT_RESPONSE_DELAY_RANGE,
+    JITTER_RANGE,
+    MAX_WEIGHTED_TIME_ATTEMPTS,
+    RESPONSE_JITTER_RANGE,
+    SLOW_RESPONSE_DELAY_RANGE,
+)
 from imessage_data_foundry.personas.models import Persona, ResponseTime
 from imessage_data_foundry.utils.apple_time import datetime_to_apple_ns
 
@@ -11,18 +20,6 @@ RESPONSE_TIME_RANGES: dict[ResponseTime, tuple[int, int]] = {
     ResponseTime.HOURS: (1800, 14400),
     ResponseTime.DAYS: (43200, 172800),
 }
-
-CIRCADIAN_WEIGHTS: list[tuple[int, int, float]] = [
-    (0, 6, 0.05),
-    (6, 8, 0.30),
-    (8, 9, 0.70),
-    (9, 12, 0.90),
-    (12, 14, 0.80),
-    (14, 18, 0.95),
-    (18, 21, 1.00),
-    (21, 23, 0.70),
-    (23, 24, 0.30),
-]
 
 
 @dataclass
@@ -138,7 +135,6 @@ def _generate_single_session(
     config: TimestampConfig,
     rng: random.Random,
 ) -> list[datetime]:
-    """Generate timestamps for a single session."""
     timestamps = [start]
     current = start
 
@@ -156,15 +152,14 @@ def _get_session_delay(
     config: TimestampConfig,
     rng: random.Random,
 ) -> timedelta:
-    """Get delay between messages in a session."""
     if persona and persona.typical_response_time == ResponseTime.INSTANT:
-        base_delay = rng.randint(5, 45)
+        base_delay = rng.randint(*INSTANT_RESPONSE_DELAY_RANGE)
     elif persona and persona.typical_response_time == ResponseTime.DAYS:
-        base_delay = rng.randint(60, 180)
+        base_delay = rng.randint(*SLOW_RESPONSE_DELAY_RANGE)
     else:
         base_delay = rng.randint(config.min_session_gap_seconds, config.max_session_gap_seconds)
 
-    jitter = rng.uniform(0.7, 1.3)
+    jitter = rng.uniform(*JITTER_RANGE)
     return timedelta(seconds=int(base_delay * jitter))
 
 
@@ -188,9 +183,8 @@ def _pick_weighted_time(
     start: datetime,
     end: datetime,
     rng: random.Random,
-    max_attempts: int = 50,
+    max_attempts: int = MAX_WEIGHTED_TIME_ATTEMPTS,
 ) -> datetime:
-    """Pick a time weighted by circadian rhythm."""
     for _ in range(max_attempts):
         random_seconds = rng.uniform(0, (end - start).total_seconds())
         candidate = start + timedelta(seconds=random_seconds)
@@ -204,24 +198,22 @@ def _pick_weighted_time(
 
 
 def _get_circadian_weight(hour: int) -> float:
-    """Get weight for a given hour based on circadian rhythm."""
     for start_hour, end_hour, weight in CIRCADIAN_WEIGHTS:
         if start_hour <= hour < end_hour:
             return weight
-    return 0.5
+    return DEFAULT_CIRCADIAN_WEIGHT
 
 
 def get_response_delay(
     persona: Persona,
     rng: random.Random | None = None,
 ) -> timedelta:
-    """Get a realistic response delay based on persona's response time setting."""
     if rng is None:
         rng = random.Random()
 
     min_seconds, max_seconds = RESPONSE_TIME_RANGES.get(persona.typical_response_time, (60, 600))
 
     delay_seconds = rng.randint(min_seconds, max_seconds)
-    jitter = rng.uniform(0.8, 1.2)
+    jitter = rng.uniform(*RESPONSE_JITTER_RANGE)
 
     return timedelta(seconds=int(delay_seconds * jitter))

@@ -1,6 +1,11 @@
 import random
 from dataclasses import dataclass, field
 
+from imessage_data_foundry.conversations.constants import (
+    MAX_SEED_THEMES,
+    MIN_THEME_WORD_LENGTH,
+    TOPIC_SHIFT,
+)
 from imessage_data_foundry.personas.models import Persona
 
 
@@ -12,16 +17,15 @@ class ConversationSeed:
 
 
 def parse_seed(seed: str | None) -> ConversationSeed:
-    """Parse user-provided seed into structured components."""
     if not seed or not seed.strip():
         return ConversationSeed()
 
     seed = seed.strip()
-    themes = [word.strip() for word in seed.split() if len(word.strip()) > 3]
+    themes = [word.strip() for word in seed.split() if len(word.strip()) > MIN_THEME_WORD_LENGTH]
 
     return ConversationSeed(
         raw_seed=seed,
-        themes=themes[:5],
+        themes=themes[:MAX_SEED_THEMES],
         opening_context=seed,
     )
 
@@ -31,21 +35,20 @@ def should_introduce_topic_shift(
     total_messages: int,
     rng: random.Random,
 ) -> bool:
-    """Determine if a natural topic shift should occur."""
-    if total_messages < 20:
+    if total_messages < TOPIC_SHIFT.min_messages:
         return False
 
     progress = message_index / total_messages
 
-    if progress < 0.2:
+    if progress < TOPIC_SHIFT.early_progress_threshold:
         return False
 
-    if progress > 0.9:
+    if progress > TOPIC_SHIFT.late_progress_threshold:
         return False
 
-    base_chance = 0.02
-    if 0.4 <= progress <= 0.6:
-        base_chance = 0.05
+    base_chance = TOPIC_SHIFT.base_shift_chance
+    if TOPIC_SHIFT.mid_conversation_start <= progress <= TOPIC_SHIFT.mid_conversation_end:
+        base_chance = TOPIC_SHIFT.peak_shift_chance
 
     return rng.random() < base_chance
 
@@ -55,7 +58,6 @@ def get_topic_shift_hint(
     current_themes: list[str],
     rng: random.Random,
 ) -> str | None:
-    """Generate a hint for topic shift based on persona interests."""
     all_topics: list[str] = []
     for persona in personas:
         all_topics.extend(persona.topics_of_interest)

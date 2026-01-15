@@ -4,6 +4,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 
+from imessage_data_foundry.conversations.constants import (
+    DB_WRITE_CHUNK_SIZE,
+    DEFAULT_MAX_RETRIES,
+)
 from imessage_data_foundry.conversations.timestamps import generate_timestamps
 from imessage_data_foundry.db.builder import DatabaseBuilder
 from imessage_data_foundry.llm.base import LLMProvider
@@ -70,7 +74,6 @@ def validate_generation_inputs(
     personas: list[Persona],
     config: ConversationConfig,
 ) -> list[str]:
-    """Validate inputs and return list of errors."""
     errors: list[str] = []
 
     persona_ids = {p.id for p in personas}
@@ -91,8 +94,6 @@ def validate_generation_inputs(
 
 
 class ConversationGenerator:
-    """Orchestrates conversation generation using LLM and timestamp distribution."""
-
     def __init__(
         self,
         provider_manager: ProviderManager,
@@ -108,7 +109,6 @@ class ConversationGenerator:
         config: ConversationConfig,
         progress_callback: ProgressCallback | None = None,
     ) -> GenerationResult:
-        """Generate a complete conversation."""
         start_time = time.monotonic()
 
         errors = validate_generation_inputs(personas, config)
@@ -205,9 +205,8 @@ class ConversationGenerator:
             handle_map,
         )
 
-        chunk_size = 500
-        for i in range(0, len(message_tuples), chunk_size):
-            chunk = message_tuples[i : i + chunk_size]
+        for i in range(0, len(message_tuples), DB_WRITE_CHUNK_SIZE):
+            chunk = message_tuples[i : i + DB_WRITE_CHUNK_SIZE]
             builder.add_messages_batch(
                 chat_id=chat_id,
                 messages=chunk,
@@ -230,7 +229,6 @@ class ConversationGenerator:
         seed: str | None,
         progress_callback: ProgressCallback | None,
     ) -> list[GeneratedMessage]:
-        """Generate all messages in batches."""
         messages: list[GeneratedMessage] = []
         batch_size = self.config.message_batch_size
         context_size = self.config.context_window_size
@@ -277,9 +275,8 @@ class ConversationGenerator:
         context: list[GeneratedMessage],
         count: int,
         seed: str | None,
-        max_retries: int = 3,
+        max_retries: int = DEFAULT_MAX_RETRIES,
     ) -> list[GeneratedMessage]:
-        """Generate batch with exponential backoff retry."""
         last_error: Exception | None = None
 
         for attempt in range(max_retries):
@@ -305,7 +302,6 @@ class ConversationGenerator:
         self,
         personas: list[Persona],
     ) -> list[dict[str, str]]:
-        """Convert Persona objects to LLM prompt format."""
         return [
             {
                 "id": p.id,
@@ -324,7 +320,6 @@ class ConversationGenerator:
         messages: list[TimestampedMessage],
         handle_map: dict[str, int],
     ) -> list[tuple[int | None, str, bool, int]]:
-        """Convert timestamped messages to database tuple format."""
         result: list[tuple[int | None, str, bool, int]] = []
 
         for tm in messages:
