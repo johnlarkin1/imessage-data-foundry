@@ -21,6 +21,7 @@ from imessage_data_foundry.personas.storage import PersonaStorage
 from imessage_data_foundry.ui.screens.base import NavigationBar, WizardScreen
 from imessage_data_foundry.ui.state import Screen
 from imessage_data_foundry.ui.widgets import AvatarCircle
+from imessage_data_foundry.utils.enum_parsing import parse_enum
 
 
 class PersonaCard(Static):
@@ -329,16 +330,32 @@ class PersonasScreen(WizardScreen):
                 style_input.value = generated.writing_style
 
                 freq_select = self.query_one("#persona-frequency", Select)
-                freq_select.value = generated.communication_frequency
+                freq_select.value = parse_enum(
+                    generated.communication_frequency,
+                    CommunicationFrequency,
+                    CommunicationFrequency.MEDIUM,
+                ).value
 
                 emoji_select = self.query_one("#persona-emoji", Select)
-                emoji_select.value = generated.emoji_usage
+                emoji_select.value = parse_enum(
+                    generated.emoji_usage,
+                    EmojiUsage,
+                    EmojiUsage.LIGHT,
+                ).value
 
                 vocab_select = self.query_one("#persona-vocabulary", Select)
-                vocab_select.value = generated.vocabulary_level
+                vocab_select.value = parse_enum(
+                    generated.vocabulary_level,
+                    VocabularyLevel,
+                    VocabularyLevel.MODERATE,
+                ).value
 
                 resp_select = self.query_one("#persona-response-time", Select)
-                resp_select.value = generated.typical_response_time
+                resp_select.value = parse_enum(
+                    generated.typical_response_time,
+                    ResponseTime,
+                    ResponseTime.MINUTES,
+                ).value
 
                 status.update("[#34C759]Done! Review and click Create[/]")
             else:
@@ -395,16 +412,32 @@ class PersonasScreen(WizardScreen):
                 relationship_input.value = generated.relationship
 
                 freq_select = self.query_one("#persona-frequency", Select)
-                freq_select.value = generated.communication_frequency
+                freq_select.value = parse_enum(
+                    generated.communication_frequency,
+                    CommunicationFrequency,
+                    CommunicationFrequency.MEDIUM,
+                ).value
 
                 emoji_select = self.query_one("#persona-emoji", Select)
-                emoji_select.value = generated.emoji_usage
+                emoji_select.value = parse_enum(
+                    generated.emoji_usage,
+                    EmojiUsage,
+                    EmojiUsage.LIGHT,
+                ).value
 
                 vocab_select = self.query_one("#persona-vocabulary", Select)
-                vocab_select.value = generated.vocabulary_level
+                vocab_select.value = parse_enum(
+                    generated.vocabulary_level,
+                    VocabularyLevel,
+                    VocabularyLevel.MODERATE,
+                ).value
 
                 resp_select = self.query_one("#persona-response-time", Select)
-                resp_select.value = generated.typical_response_time
+                resp_select.value = parse_enum(
+                    generated.typical_response_time,
+                    ResponseTime,
+                    ResponseTime.MINUTES,
+                ).value
 
                 status.update("[#34C759]Generated! Review and click Create[/]")
             else:
@@ -449,6 +482,16 @@ class PersonasScreen(WizardScreen):
             vocabulary = VocabularyLevel(vocab_select.value)
 
             is_self = self.query_one("#persona-is-self", Checkbox).value
+
+            if is_self:
+                existing_self = [p for p in self._personas if p.is_self]
+                if existing_self:
+                    self.notify(
+                        f"A 'self' persona already exists: {existing_self[0].name}. "
+                        "Uncheck 'This is me' or delete the existing one first.",
+                        severity="error",
+                    )
+                    return
 
             persona = Persona(
                 name=name,

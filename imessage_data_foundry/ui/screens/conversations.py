@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.widgets import Button, Input, Label, Select, Static, TextArea
 
 from imessage_data_foundry.personas.models import ChatType, ServiceType
@@ -24,7 +24,7 @@ class ConversationsScreen(WizardScreen):
     SCREEN_ID = Screen.CONVERSATIONS
 
     def body(self) -> ComposeResult:
-        with Vertical(id="conversation-config"):
+        with VerticalScroll(id="conversation-config"):
             with (
                 SectionCard("Participants"),
                 Horizontal(id="selected-personas-display", classes="personas-row"),

@@ -56,21 +56,19 @@ class LocalMLXProvider(LLMProvider):
         import os
         import threading
 
-        from mlx_lm import load
-
         # Workaround for Python 3.13 multiprocessing fd issues when running inside
         # Textual. tqdm tries to create multiprocessing locks which fail when
         # Textual controls terminal file descriptors. We replace the mp lock
         # with a threading lock which doesn't have this issue.
-        import tqdm.std
+        import tqdm.std  # type: ignore[import-untyped]
+        from mlx_lm import load
 
         original_create_mp_lock = tqdm.std.TqdmDefaultWriteLock.create_mp_lock
 
-        @classmethod
         def patched_create_mp_lock(cls: type) -> None:
-            cls.mp_lock = threading.RLock()  # type: ignore[assignment]
+            cls.mp_lock = threading.RLock()  # type: ignore[attr-defined]
 
-        tqdm.std.TqdmDefaultWriteLock.create_mp_lock = patched_create_mp_lock
+        tqdm.std.TqdmDefaultWriteLock.create_mp_lock = classmethod(patched_create_mp_lock)  # type: ignore[assignment,arg-type]
 
         old_hf_disable = os.environ.get("HF_HUB_DISABLE_PROGRESS_BARS")
         os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"

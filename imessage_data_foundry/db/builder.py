@@ -89,6 +89,9 @@ class DatabaseBuilder:
         # Ensure parent directory exists for file-based databases
         if not self.in_memory:
             self.output_path.parent.mkdir(parents=True, exist_ok=True)
+            # Remove existing file to start fresh
+            if self.output_path.exists():
+                self.output_path.unlink()
 
         self._connection = sqlite3.connect(db_path)
         self._connection.row_factory = sqlite3.Row

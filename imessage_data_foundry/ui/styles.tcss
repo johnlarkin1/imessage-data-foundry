@@ -458,6 +458,7 @@ CreatePersonaForm .form-actions Button {
 #conversation-config {
     padding: 1 4;
     max-width: 100;
+    height: 1fr;
 }
 
 #selected-personas-display {
@@ -559,6 +560,10 @@ CreatePersonaForm .form-actions Button {
     text-align: center;
     margin-top: 2;
     padding: 2;
+    height: auto;
+}
+
+#gen-result.success-result {
     border: round $imessage-green;
     background: $imessage-green 15%;
 }
@@ -571,6 +576,32 @@ CreatePersonaForm .form-actions Button {
 #gen-result .result-path {
     color: $imessage-text-primary;
     margin-top: 1;
+}
+
+#gen-result.error-result {
+    border: round $imessage-red;
+    background: $imessage-red 15%;
+}
+
+#gen-preview {
+    margin-top: 2;
+    padding: 1 2;
+    height: auto;
+}
+
+#gen-preview.preview-box {
+    border: round $imessage-surface-elevated;
+    background: $imessage-surface;
+}
+
+#gen-scroll {
+    height: 1fr;
+}
+
+#gen-center {
+    width: 100%;
+    height: auto;
+    padding: 2;
 }
 
 #gen-buttons {

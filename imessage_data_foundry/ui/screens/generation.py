@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Center, Vertical
+from textual.containers import Center, Horizontal, Vertical, VerticalScroll
 from textual.widgets import Button, Label, ProgressBar, Static
 
 from imessage_data_foundry.conversations.generator import (
     ConversationGenerator,
     GenerationProgress,
+    TimestampedMessage,
 )
 from imessage_data_foundry.db.builder import DatabaseBuilder
 from imessage_data_foundry.llm.config import LLMConfig
@@ -34,17 +35,23 @@ class GenerationScreen(WizardScreen):
         super().__init__()
         self._is_generating = False
         self._is_complete = False
+        self._persona_names: dict[str, str] = {}
 
     def body(self) -> ComposeResult:
-        with Center(), Vertical(id="generation-content"):
+        with (
+            VerticalScroll(id="gen-scroll"),
+            Center(id="gen-center"),
+            Vertical(id="generation-content"),
+        ):
             yield Label("Generating Conversation", id="gen-title")
             yield AnimatedSpinner("Initializing...", id="gen-spinner")
-            yield Static("", id="gen-phase")
+            yield Static("[dim]Preparing generation...[/]", id="gen-phase")
             yield ProgressBar(total=100, show_eta=False, id="gen-progress")
-            yield Static("", id="gen-stats")
+            yield Static("[dim]Waiting to start...[/]", id="gen-stats")
             yield Static("", id="gen-result")
+            yield Static("", id="gen-preview")
 
-            with Center(id="gen-buttons"):
+            with Horizontal(id="gen-buttons"):
                 yield Button(
                     "Cancel",
                     id="cancel-btn",
@@ -81,6 +88,7 @@ class GenerationScreen(WizardScreen):
             all_personas = storage.list_all()
 
         selected_personas = [p for p in all_personas if p.id in self.state.selected_persona_ids]
+        self._persona_names = {p.id: p.name for p in selected_personas}
 
         if len(selected_personas) < 2:
             self._show_error("Not enough personas selected")
@@ -113,7 +121,7 @@ class GenerationScreen(WizardScreen):
         spinner.update_text("Starting generation...")
 
         def on_progress(progress: GenerationProgress) -> None:
-            self.call_from_thread(self._update_progress, progress)  # type: ignore[attr-defined]
+            self._update_progress(progress)
 
         try:
             self.state.output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -144,6 +152,9 @@ class GenerationScreen(WizardScreen):
             result_label.update(
                 f"[#34C759 bold]Output saved to:[/]\n{self.state.output_path.absolute()}"
             )
+            result_label.add_class("success-result")
+
+            self._show_preview(result.messages)
 
             self._finish_generation(success=True)
 
@@ -154,12 +165,45 @@ class GenerationScreen(WizardScreen):
             self._show_error(str(e))
 
     def _show_error(self, message: str) -> None:
-        spinner = self.query_one("#gen-spinner", AnimatedSpinner)
-        phase_label = self.query_one("#gen-phase", Static)
+        try:
+            spinner = self.query_one("#gen-spinner", AnimatedSpinner)
+            phase_label = self.query_one("#gen-phase", Static)
+            stats_label = self.query_one("#gen-stats", Static)
+            result_label = self.query_one("#gen-result", Static)
 
-        spinner.display = False
-        phase_label.update(f"[#FF3B30 bold]Error:[/] {message}")
+            spinner.display = False
+            phase_label.update("[#FF3B30 bold]Generation Failed[/]")
+            stats_label.update("")
+            result_label.update(f"[#FF3B30]{message}[/]")
+            result_label.add_class("error-result")
+        except Exception:
+            pass
         self._finish_generation(success=False)
+
+    def _show_preview(self, messages: list[TimestampedMessage]) -> None:
+        try:
+            preview_label = self.query_one("#gen-preview", Static)
+            if not messages:
+                return
+
+            lines = ["[bold]Conversation Preview:[/]\n"]
+            sample = messages[:10]
+
+            for tm in sample:
+                msg = tm.message
+                name = self._persona_names.get(msg.sender_id, "Unknown")
+                if msg.is_from_me:
+                    lines.append(f"[#007AFF bold]{name}:[/] {msg.text}")
+                else:
+                    lines.append(f"[#8E8E93 bold]{name}:[/] {msg.text}")
+
+            if len(messages) > 10:
+                lines.append(f"\n[dim]... and {len(messages) - 10} more messages[/]")
+
+            preview_label.update("\n".join(lines))
+            preview_label.add_class("preview-box")
+        except Exception:
+            pass
 
     def _update_progress(self, progress: GenerationProgress) -> None:
         spinner = self.query_one("#gen-spinner", AnimatedSpinner)

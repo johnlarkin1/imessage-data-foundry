@@ -21,6 +21,7 @@ from imessage_data_foundry.personas.models import (
 from imessage_data_foundry.personas.storage import PersonaStorage
 from imessage_data_foundry.ui.screens.base import WizardScreen
 from imessage_data_foundry.ui.state import Screen
+from imessage_data_foundry.utils.enum_parsing import parse_enum
 
 
 class WelcomeScreen(WizardScreen):
@@ -106,10 +107,26 @@ class WelcomeScreen(WizardScreen):
                     identifier=f"+1555{random.randint(1000000, 9999999)}",
                     personality=self_p.personality,
                     writing_style=self_p.writing_style,
-                    communication_frequency=CommunicationFrequency(self_p.communication_frequency),
-                    typical_response_time=ResponseTime(self_p.typical_response_time),
-                    emoji_usage=EmojiUsage(self_p.emoji_usage),
-                    vocabulary_level=VocabularyLevel(self_p.vocabulary_level),
+                    communication_frequency=parse_enum(
+                        self_p.communication_frequency,
+                        CommunicationFrequency,
+                        CommunicationFrequency.MEDIUM,
+                    ),
+                    typical_response_time=parse_enum(
+                        self_p.typical_response_time,
+                        ResponseTime,
+                        ResponseTime.MINUTES,
+                    ),
+                    emoji_usage=parse_enum(
+                        self_p.emoji_usage,
+                        EmojiUsage,
+                        EmojiUsage.LIGHT,
+                    ),
+                    vocabulary_level=parse_enum(
+                        self_p.vocabulary_level,
+                        VocabularyLevel,
+                        VocabularyLevel.MODERATE,
+                    ),
                     is_self=True,
                 )
                 storage.create(self_persona)
@@ -121,12 +138,26 @@ class WelcomeScreen(WizardScreen):
                     relationship=contact_p.relationship,
                     personality=contact_p.personality,
                     writing_style=contact_p.writing_style,
-                    communication_frequency=CommunicationFrequency(
-                        contact_p.communication_frequency
+                    communication_frequency=parse_enum(
+                        contact_p.communication_frequency,
+                        CommunicationFrequency,
+                        CommunicationFrequency.MEDIUM,
                     ),
-                    typical_response_time=ResponseTime(contact_p.typical_response_time),
-                    emoji_usage=EmojiUsage(contact_p.emoji_usage),
-                    vocabulary_level=VocabularyLevel(contact_p.vocabulary_level),
+                    typical_response_time=parse_enum(
+                        contact_p.typical_response_time,
+                        ResponseTime,
+                        ResponseTime.MINUTES,
+                    ),
+                    emoji_usage=parse_enum(
+                        contact_p.emoji_usage,
+                        EmojiUsage,
+                        EmojiUsage.LIGHT,
+                    ),
+                    vocabulary_level=parse_enum(
+                        contact_p.vocabulary_level,
+                        VocabularyLevel,
+                        VocabularyLevel.MODERATE,
+                    ),
                     is_self=False,
                 )
                 storage.create(contact_persona)

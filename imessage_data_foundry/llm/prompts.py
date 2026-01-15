@@ -71,6 +71,12 @@ class PromptTemplates:
             - Defined emoji usage patterns matching their personality
             - 3-5 topics they naturally discuss
 
+            CRITICAL: For these fields, use ONLY the exact values shown (no variations or descriptions):
+            - communication_frequency: "high", "medium", or "low"
+            - typical_response_time: "instant", "minutes", "hours", or "days"
+            - emoji_usage: "none", "light", "moderate", or "heavy"
+            - vocabulary_level: "simple", "moderate", or "sophisticated"
+
             IMPORTANT: Return ONLY valid JSON with no additional text or explanation.
 
             JSON Schema to follow:
