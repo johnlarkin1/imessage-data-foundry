@@ -1,5 +1,3 @@
-"""Persona management for iMessage Data Foundry."""
-
 from imessage_data_foundry.personas.models import (
     ChatType,
     CommunicationFrequency,

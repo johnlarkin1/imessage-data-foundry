@@ -1,13 +1,9 @@
-"""SQLite-based persona storage for foundry.db."""
-
-from __future__ import annotations
-
 import json
 import os
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from imessage_data_foundry.personas.models import (
     CommunicationFrequency,
@@ -106,7 +102,7 @@ class PersonaStorage:
             self._connection.close()
             self._connection = None
 
-    def __enter__(self) -> PersonaStorage:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
