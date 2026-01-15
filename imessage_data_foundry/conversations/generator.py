@@ -2,6 +2,7 @@ import asyncio
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import Enum
 
 from imessage_data_foundry.conversations.timestamps import generate_timestamps
 from imessage_data_foundry.db.builder import DatabaseBuilder
@@ -12,20 +13,24 @@ from imessage_data_foundry.llm.models import GeneratedMessage
 from imessage_data_foundry.personas.models import ChatType, ConversationConfig, Persona
 
 
+class GenerationPhase(str, Enum):
+    GENERATING = "generating"
+    ASSIGNING_TIMESTAMPS = "assigning_timestamps"
+    WRITING_DATABASE = "writing_database"
+
+
 class GenerationError(Exception):
-    """Base error for generation failures."""
+    pass
 
 
 class LLMGenerationError(GenerationError):
-    """Raised when LLM generation fails after retries."""
-
     def __init__(self, message: str, partial_messages: list[GeneratedMessage] | None = None):
         super().__init__(message)
         self.partial_messages = partial_messages or []
 
 
 class ValidationError(GenerationError):
-    """Raised when input validation fails."""
+    pass
 
 
 @dataclass
@@ -34,7 +39,7 @@ class GenerationProgress:
     generated_messages: int
     current_batch: int
     total_batches: int
-    phase: str
+    phase: GenerationPhase
 
     @property
     def percent_complete(self) -> float:
@@ -45,8 +50,6 @@ class GenerationProgress:
 
 @dataclass
 class TimestampedMessage:
-    """A generated message with its assigned timestamp."""
-
     message: GeneratedMessage
     timestamp: int
 
@@ -130,7 +133,7 @@ class ConversationGenerator:
                     generated_messages=len(messages),
                     current_batch=0,
                     total_batches=0,
-                    phase="assigning_timestamps",
+                    phase=GenerationPhase.ASSIGNING_TIMESTAMPS,
                 )
             )
 
@@ -173,7 +176,7 @@ class ConversationGenerator:
                     generated_messages=len(result.messages),
                     current_batch=0,
                     total_batches=0,
-                    phase="writing_database",
+                    phase=GenerationPhase.WRITING_DATABASE,
                 )
             )
 
@@ -250,7 +253,7 @@ class ConversationGenerator:
                         generated_messages=len(messages),
                         current_batch=batch_num,
                         total_batches=total_batches,
-                        phase="generating",
+                        phase=GenerationPhase.GENERATING,
                     )
                 )
 
