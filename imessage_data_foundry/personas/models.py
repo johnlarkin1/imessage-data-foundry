@@ -6,6 +6,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_validator
 
+from imessage_data_foundry.utils.phone_numbers import format_national
+
 
 class IdentifierType(str, Enum):
     PHONE = "phone"
@@ -84,14 +86,12 @@ class Persona(BaseModel):
     def validate_topics(cls, v: list[str]) -> list[str]:
         return [topic.strip() for topic in v if topic.strip()]
 
-    @computed_field  # type: ignore[prop-decorator]
+    @computed_field  # type: ignore[misc]
     @property
     def display_identifier(self) -> str:
         if self.identifier_type == IdentifierType.EMAIL:
             return self.identifier
         try:
-            from imessage_data_foundry.utils.phone_numbers import format_national
-
             return format_national(self.identifier, self.country_code)
         except Exception:
             return self.identifier

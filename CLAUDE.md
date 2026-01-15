@@ -8,9 +8,9 @@ This is a Python tool that generates fake iMessage SQLite databases with realist
 
 ## Key Documents
 
-1. **OBJECTIVE.md** — Project goals, requirements, and scope
-2. **ARCHITECTURE.md** — Technical design, project structure, data models
-3. **SCHEMA_NOTES.md** — iMessage database schema reference
+1. **docs/OBJECTIVE.md** — Project goals, requirements, and scope
+2. **docs/ARCHITECTURE.md** — Technical design, project structure, data models
+3. **docs/SCHEMA_NOTES.md** — iMessage database schema reference
 4. **README.md** — User-facing documentation
 5. **pyproject.toml** — Dependencies and project configuration
 
@@ -233,6 +233,7 @@ sqlite3 ~/Library/Messages/chat.db ".indexes message"
 ## Notes for Claude Code
 
 - **KEEP THE CODE SIMPLE** - don't use too many comments
+- **No `if TYPE_CHECKING:` pattern** — Move all imports to the top of the file. Use `from __future__ import annotations` for forward references instead of the `TYPE_CHECKING` guard.
 - **Start with the database layer** — Everything else depends on it
 - **Use `imessage-exporter` source code as schema reference** — It's the most complete
 - **Test incrementally** — Verify each phase before moving to the next
