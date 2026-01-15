@@ -1,18 +1,9 @@
-"""Realistic timestamp distribution for conversation generation."""
-
-from __future__ import annotations
-
 import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
 
-from imessage_data_foundry.personas.models import ResponseTime
+from imessage_data_foundry.personas.models import Persona, ResponseTime
 from imessage_data_foundry.utils.apple_time import datetime_to_apple_ns
-
-if TYPE_CHECKING:
-    from imessage_data_foundry.personas.models import Persona
-
 
 RESPONSE_TIME_RANGES: dict[ResponseTime, tuple[int, int]] = {
     ResponseTime.INSTANT: (5, 60),

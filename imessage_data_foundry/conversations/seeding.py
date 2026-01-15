@@ -1,13 +1,7 @@
-"""Conversation seed and theme handling."""
-
-from __future__ import annotations
-
 import random
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from imessage_data_foundry.personas.models import Persona
+from imessage_data_foundry.personas.models import Persona
 
 
 @dataclass

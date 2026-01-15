@@ -1,22 +1,15 @@
-"""Conversation generation orchestrator."""
-
-from __future__ import annotations
-
 import asyncio
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from imessage_data_foundry.conversations.timestamps import generate_timestamps
+from imessage_data_foundry.db.builder import DatabaseBuilder
+from imessage_data_foundry.llm.base import LLMProvider
 from imessage_data_foundry.llm.config import LLMConfig
+from imessage_data_foundry.llm.manager import ProviderManager
 from imessage_data_foundry.llm.models import GeneratedMessage
-
-if TYPE_CHECKING:
-    from imessage_data_foundry.db.builder import DatabaseBuilder
-    from imessage_data_foundry.llm.base import LLMProvider
-    from imessage_data_foundry.llm.manager import ProviderManager
-    from imessage_data_foundry.personas.models import ConversationConfig, Persona
+from imessage_data_foundry.personas.models import ChatType, ConversationConfig, Persona
 
 
 class GenerationError(Exception):
@@ -171,9 +164,6 @@ class ConversationGenerator:
         builder: DatabaseBuilder,
         progress_callback: ProgressCallback | None = None,
     ) -> GenerationResult:
-        """Generate conversation and write directly to database."""
-        from imessage_data_foundry.personas.models import ChatType
-
         result = await self.generate(personas, config, progress_callback)
 
         if progress_callback:

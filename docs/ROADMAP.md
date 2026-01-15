@@ -305,13 +305,6 @@ Quick validation: Generate a test DB, inspect with sqlite3
 | Milestone | Criteria | Status |
 |-----------|----------|--------|
 | M0: Foundation | All utility functions and models working | ✅ |
-<<<<<<< HEAD
-| M1: Valid DB | Generate a DB that opens in SQLiteFlow without errors | 🔲 |
-| M2: Schema Match | Generated schema matches real `chat.db` structure | 🔲 |
-| M3: Manual Messages | Can programmatically insert messages that appear valid | 🔲 |
-| M4: LLM Messages | Can generate messages via LLM and insert them | 🔲 |
-| M5: Full Pipeline | End-to-end: personas → conversations → valid DB | 🔲 |
-=======
 | M1: Valid DB | Generate a DB that opens in SQLiteFlow without errors | ✅ |
 | M2: Schema Match | Generated schema matches real `chat.db` structure | ✅ |
 | M3: Manual Messages | Can programmatically insert messages that appear valid | ✅ |
