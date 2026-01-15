@@ -1,5 +1,3 @@
-"""SQLite-based storage for personas."""
-
 import json
 import sqlite3
 from datetime import UTC, datetime
@@ -23,8 +21,6 @@ class PersonaNotFoundError(Exception):
 
 
 class PersonaStorage:
-    """SQLite-based storage for personas."""
-
     def __init__(self, db_path: str | Path | None = None) -> None:
         self.db_path = Path(db_path) if db_path else get_default_db_path()
         self._connection: sqlite3.Connection | None = None
@@ -138,7 +134,9 @@ class PersonaStorage:
         """Export all personas as JSON-serializable dicts."""
         return [p.model_dump(mode="json") for p in self.list_all()]
 
-    def import_personas(self, data: list[dict[str, Any]], replace: bool = False) -> list[Persona]:
+    def import_personas(
+        self, data: list[dict[str, Any]], replace: bool = False
+    ) -> list[Persona]:
         """Import personas from JSON data."""
         personas = [Persona.model_validate(d) for d in data]
 
@@ -177,7 +175,9 @@ class PersonaStorage:
         )
 
     def _row_to_persona(self, row: sqlite3.Row) -> Persona:
-        topics = json.loads(row["topics_of_interest"]) if row["topics_of_interest"] else []
+        topics = (
+            json.loads(row["topics_of_interest"]) if row["topics_of_interest"] else []
+        )
         return Persona(
             id=row["id"],
             name=row["name"],
@@ -187,7 +187,9 @@ class PersonaStorage:
             personality=row["personality"] or "",
             writing_style=row["writing_style"] or "",
             relationship=row["relationship"] or "",
-            communication_frequency=CommunicationFrequency(row["communication_frequency"]),
+            communication_frequency=CommunicationFrequency(
+                row["communication_frequency"]
+            ),
             typical_response_time=ResponseTime(row["typical_response_time"]),
             emoji_usage=EmojiUsage(row["emoji_usage"]),
             vocabulary_level=VocabularyLevel(row["vocabulary_level"]),

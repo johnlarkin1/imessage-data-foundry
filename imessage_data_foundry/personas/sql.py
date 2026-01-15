@@ -1,5 +1,3 @@
-"""SQL statements for persona storage."""
-
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS personas (
     id TEXT PRIMARY KEY,
