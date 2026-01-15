@@ -1,10 +1,12 @@
+"""SQLite-based storage for personas."""
+
 import json
-import os
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Self
 
+from imessage_data_foundry.personas import sql
 from imessage_data_foundry.personas.models import (
     CommunicationFrequency,
     EmojiUsage,
@@ -13,72 +15,15 @@ from imessage_data_foundry.personas.models import (
     ResponseTime,
     VocabularyLevel,
 )
+from imessage_data_foundry.utils.paths import get_default_db_path
 
 
 class PersonaNotFoundError(Exception):
     """Raised when a persona is not found."""
 
 
-FOUNDRY_SCHEMA = """
-CREATE TABLE IF NOT EXISTS personas (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    identifier TEXT NOT NULL,
-    identifier_type TEXT NOT NULL,
-    country_code TEXT DEFAULT 'US',
-    personality TEXT,
-    writing_style TEXT,
-    relationship TEXT,
-    communication_frequency TEXT,
-    typical_response_time TEXT,
-    emoji_usage TEXT,
-    vocabulary_level TEXT,
-    topics_of_interest TEXT,
-    is_self INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS generation_history (
-    id TEXT PRIMARY KEY,
-    output_path TEXT NOT NULL,
-    macos_version TEXT NOT NULL,
-    persona_ids TEXT NOT NULL,
-    message_count INTEGER,
-    created_at TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_personas_name ON personas(name);
-CREATE INDEX IF NOT EXISTS idx_personas_is_self ON personas(is_self);
-CREATE INDEX IF NOT EXISTS idx_personas_identifier ON personas(identifier);
-"""
-
-
-def get_default_db_path() -> Path:
-    """Get the default path for foundry.db."""
-    config_path = os.environ.get("IMESSAGE_FOUNDRY_CONFIG")
-    if config_path:
-        return Path(config_path).parent / "foundry.db"
-
-    xdg_path = Path.home() / ".config" / "imessage-data-foundry" / "foundry.db"
-    if xdg_path.parent.exists() or not Path("./data").exists():
-        return xdg_path
-
-    return Path("./data/foundry.db")
-
-
 class PersonaStorage:
     """SQLite-based storage for personas."""
-
-    _INSERT_SQL = """
-        INSERT INTO personas (
-            id, name, identifier, identifier_type, country_code,
-            personality, writing_style, relationship,
-            communication_frequency, typical_response_time,
-            emoji_usage, vocabulary_level, topics_of_interest,
-            is_self, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
 
     def __init__(self, db_path: str | Path | None = None) -> None:
         self.db_path = Path(db_path) if db_path else get_default_db_path()
@@ -94,7 +39,7 @@ class PersonaStorage:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._connection = sqlite3.connect(str(self.db_path))
         self._connection.row_factory = sqlite3.Row
-        self._connection.executescript(FOUNDRY_SCHEMA)
+        self._connection.executescript(sql.SCHEMA)
         self._connection.commit()
 
     def close(self) -> None:
@@ -113,7 +58,7 @@ class PersonaStorage:
 
     def get(self, persona_id: str) -> Persona:
         """Raises PersonaNotFoundError if not found."""
-        cursor = self.connection.execute("SELECT * FROM personas WHERE id = ?", (persona_id,))
+        cursor = self.connection.execute(sql.SELECT_BY_ID, (persona_id,))
         row = cursor.fetchone()
         if row is None:
             raise PersonaNotFoundError(f"Persona not found: {persona_id}")
@@ -121,15 +66,12 @@ class PersonaStorage:
 
     def get_by_name(self, name: str) -> list[Persona]:
         """Get personas by name (case-insensitive partial match)."""
-        cursor = self.connection.execute(
-            "SELECT * FROM personas WHERE name LIKE ? ORDER BY name",
-            (f"%{name}%",),
-        )
+        cursor = self.connection.execute(sql.SELECT_BY_NAME, (f"%{name}%",))
         return [self._row_to_persona(row) for row in cursor.fetchall()]
 
     def get_self(self) -> Persona | None:
         """Get the persona marked as self, if any."""
-        cursor = self.connection.execute("SELECT * FROM personas WHERE is_self = 1 LIMIT 1")
+        cursor = self.connection.execute(sql.SELECT_SELF)
         row = cursor.fetchone()
         return self._row_to_persona(row) if row else None
 
@@ -137,15 +79,7 @@ class PersonaStorage:
         """Update an existing persona. Raises PersonaNotFoundError if not found."""
         persona.updated_at = datetime.now(UTC)
         cursor = self.connection.execute(
-            """
-            UPDATE personas SET
-                name = ?, identifier = ?, identifier_type = ?, country_code = ?,
-                personality = ?, writing_style = ?, relationship = ?,
-                communication_frequency = ?, typical_response_time = ?,
-                emoji_usage = ?, vocabulary_level = ?, topics_of_interest = ?,
-                is_self = ?, updated_at = ?
-            WHERE id = ?
-            """,
+            sql.UPDATE_PERSONA,
             (
                 persona.name,
                 persona.identifier,
@@ -171,32 +105,32 @@ class PersonaStorage:
 
     def delete(self, persona_id: str) -> None:
         """Raises PersonaNotFoundError if not found."""
-        cursor = self.connection.execute("DELETE FROM personas WHERE id = ?", (persona_id,))
+        cursor = self.connection.execute(sql.DELETE_BY_ID, (persona_id,))
         if cursor.rowcount == 0:
             raise PersonaNotFoundError(f"Persona not found: {persona_id}")
         self.connection.commit()
 
     def list_all(self) -> list[Persona]:
-        cursor = self.connection.execute("SELECT * FROM personas ORDER BY name")
+        cursor = self.connection.execute(sql.SELECT_ALL)
         return [self._row_to_persona(row) for row in cursor.fetchall()]
 
     def count(self) -> int:
-        cursor = self.connection.execute("SELECT COUNT(*) FROM personas")
+        cursor = self.connection.execute(sql.SELECT_COUNT)
         return cursor.fetchone()[0]
 
     def exists(self, persona_id: str) -> bool:
-        cursor = self.connection.execute("SELECT 1 FROM personas WHERE id = ?", (persona_id,))
+        cursor = self.connection.execute(sql.SELECT_EXISTS, (persona_id,))
         return cursor.fetchone() is not None
 
     def create_many(self, personas: list[Persona]) -> list[Persona]:
         rows = [self._persona_to_row(p) for p in personas]
-        self.connection.executemany(self._INSERT_SQL, rows)
+        self.connection.executemany(sql.INSERT_PERSONA, rows)
         self.connection.commit()
         return personas
 
     def delete_all(self) -> int:
         """Delete all personas. Returns count of deleted rows."""
-        cursor = self.connection.execute("DELETE FROM personas")
+        cursor = self.connection.execute(sql.DELETE_ALL)
         self.connection.commit()
         return cursor.rowcount
 
