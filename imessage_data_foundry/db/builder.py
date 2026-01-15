@@ -5,8 +5,8 @@ from __future__ import annotations
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING
 
+from imessage_data_foundry.conversations.models import Attachment, Chat, Handle, Message
 from imessage_data_foundry.db.schema.base import (
     SchemaVersion,
     generate_message_guid,
@@ -16,10 +16,7 @@ from imessage_data_foundry.db.version_detect import (
     get_schema_for_version,
     get_schema_module,
 )
-
-if TYPE_CHECKING:
-    from imessage_data_foundry.conversations.models import Attachment, Chat, Handle, Message
-    from imessage_data_foundry.personas.models import Persona
+from imessage_data_foundry.personas.models import Persona
 
 
 class DatabaseBuilder:
@@ -166,8 +163,6 @@ class DatabaseBuilder:
 
     def add_handle_from_persona(self, persona: Persona) -> int:
         """Add a handle from a Persona model."""
-        from imessage_data_foundry.conversations.models import Handle
-
         handle = Handle.from_persona(persona)
         return self.add_handle_from_model(handle)
 

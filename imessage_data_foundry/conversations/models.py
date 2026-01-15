@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-if TYPE_CHECKING:
-    from imessage_data_foundry.personas.models import Persona
+from imessage_data_foundry.personas.models import IdentifierType, Persona
 
 
 class Message(BaseModel):
@@ -131,8 +129,6 @@ class Handle(BaseModel):
 
     @classmethod
     def from_persona(cls, persona: Persona) -> Handle:
-        from imessage_data_foundry.personas.models import IdentifierType
-
         return cls(
             id=persona.identifier,
             country=persona.country_code

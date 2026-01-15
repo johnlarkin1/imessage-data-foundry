@@ -1,4 +1,5 @@
 -- Extracted from ~/Library/Messages/chat.db on macOS Sequoia 15.x
+-- Command: sqlite3 ~/Library/Messages/chat.db ".schema"
 -- _ClientVersion: 18020
 -- Date: 2026-01-12
 
