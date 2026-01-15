@@ -1,49 +1,7 @@
 import json
 from textwrap import dedent
 
-from imessage_data_foundry.llm.models import GeneratedMessage, PersonaConstraints
-from imessage_data_foundry.personas.models import (
-    CommunicationFrequency,
-    EmojiUsage,
-    ResponseTime,
-    VocabularyLevel,
-)
-
-PERSONA_JSON_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "name": {"type": "string", "description": "Full name of the persona"},
-        "personality": {"type": "string", "description": "Personality description (2-3 sentences)"},
-        "writing_style": {
-            "type": "string",
-            "description": "How they write texts (formal, casual, uses slang, etc.)",
-        },
-        "relationship": {"type": "string", "description": "Relationship to the user"},
-        "communication_frequency": {
-            "type": "string",
-            "enum": [e.value for e in CommunicationFrequency],
-        },
-        "typical_response_time": {"type": "string", "enum": [e.value for e in ResponseTime]},
-        "emoji_usage": {"type": "string", "enum": [e.value for e in EmojiUsage]},
-        "vocabulary_level": {"type": "string", "enum": [e.value for e in VocabularyLevel]},
-        "topics_of_interest": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": "3-5 topics they often discuss",
-        },
-    },
-    "required": [
-        "name",
-        "personality",
-        "writing_style",
-        "relationship",
-        "communication_frequency",
-        "typical_response_time",
-        "emoji_usage",
-        "vocabulary_level",
-        "topics_of_interest",
-    ],
-}
+from imessage_data_foundry.llm.models import GeneratedMessage, GeneratedPersona, PersonaConstraints
 
 
 class PromptTemplates:
@@ -52,7 +10,7 @@ class PromptTemplates:
     @classmethod
     def persona_generation(cls, constraints: PersonaConstraints | None, count: int = 1) -> str:
         constraint_text = cls._format_constraints(constraints) if constraints else ""
-        schema_str = json.dumps(PERSONA_JSON_SCHEMA, indent=2)
+        schema_str = json.dumps(GeneratedPersona.model_json_schema(), indent=2)
 
         return dedent(f"""
             You are creating realistic persona(s) for a text messaging simulation.

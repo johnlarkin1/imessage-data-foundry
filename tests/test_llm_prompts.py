@@ -1,5 +1,5 @@
-from imessage_data_foundry.llm.models import GeneratedMessage, PersonaConstraints
-from imessage_data_foundry.llm.prompts import PERSONA_JSON_SCHEMA, PromptTemplates
+from imessage_data_foundry.llm.models import GeneratedMessage, GeneratedPersona, PersonaConstraints
+from imessage_data_foundry.llm.prompts import PromptTemplates
 from imessage_data_foundry.personas.models import (
     CommunicationFrequency,
     EmojiUsage,
@@ -9,21 +9,26 @@ from imessage_data_foundry.personas.models import (
 
 class TestPersonaJsonSchema:
     def test_schema_has_required_fields(self):
-        assert "properties" in PERSONA_JSON_SCHEMA
-        assert "required" in PERSONA_JSON_SCHEMA
+        schema = GeneratedPersona.model_json_schema()
+        assert "properties" in schema
+        assert "required" in schema
 
     def test_schema_required_fields(self):
-        required = PERSONA_JSON_SCHEMA["required"]
+        schema = GeneratedPersona.model_json_schema()
+        required = schema["required"]
         assert "name" in required
         assert "personality" in required
         assert "writing_style" in required
         assert "relationship" in required
 
-    def test_schema_has_enum_fields(self):
-        props = PERSONA_JSON_SCHEMA["properties"]
-        assert "enum" in props["communication_frequency"]
-        assert "enum" in props["emoji_usage"]
-        assert "enum" in props["vocabulary_level"]
+    def test_schema_has_enum_definitions(self):
+        schema = GeneratedPersona.model_json_schema()
+        assert "$defs" in schema
+        defs = schema["$defs"]
+        assert "CommunicationFrequency" in defs
+        assert "EmojiUsage" in defs
+        assert "VocabularyLevel" in defs
+        assert "ResponseTime" in defs
 
 
 class TestPersonaGenerationPrompt:

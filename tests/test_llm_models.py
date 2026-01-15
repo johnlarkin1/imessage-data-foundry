@@ -81,8 +81,8 @@ class TestGeneratedPersona:
         )
         assert persona.name == "John Doe"
         assert persona.personality == "Friendly and outgoing"
-        assert persona.communication_frequency == "medium"
-        assert persona.emoji_usage == "light"
+        assert persona.communication_frequency == CommunicationFrequency.MEDIUM
+        assert persona.emoji_usage == EmojiUsage.LIGHT
 
     def test_full_persona(self):
         persona = GeneratedPersona(
@@ -90,15 +90,15 @@ class TestGeneratedPersona:
             personality="Reserved but thoughtful",
             writing_style="formal",
             relationship="coworker",
-            communication_frequency="low",
-            typical_response_time="hours",
-            emoji_usage="none",
-            vocabulary_level="sophisticated",
+            communication_frequency=CommunicationFrequency.LOW,
+            typical_response_time=ResponseTime.HOURS,
+            emoji_usage=EmojiUsage.NONE,
+            vocabulary_level=VocabularyLevel.SOPHISTICATED,
             topics_of_interest=["tech", "books"],
         )
         assert persona.name == "Jane Smith"
-        assert persona.communication_frequency == "low"
-        assert persona.vocabulary_level == "sophisticated"
+        assert persona.communication_frequency == CommunicationFrequency.LOW
+        assert persona.vocabulary_level == VocabularyLevel.SOPHISTICATED
         assert len(persona.topics_of_interest) == 2
 
     def test_missing_required_fields_raises(self):
@@ -128,4 +128,23 @@ class TestGeneratedPersona:
         }
         persona = GeneratedPersona.model_validate(data)
         assert persona.name == "From Dict"
-        assert persona.communication_frequency == "high"
+        assert persona.communication_frequency == CommunicationFrequency.HIGH
+
+    def test_string_coercion_to_enum(self):
+        """Verify LLM string responses still parse correctly."""
+        data = {
+            "name": "Test Coercion",
+            "personality": "Test personality",
+            "writing_style": "casual",
+            "relationship": "friend",
+            "communication_frequency": "high",
+            "typical_response_time": "instant",
+            "emoji_usage": "heavy",
+            "vocabulary_level": "simple",
+            "topics_of_interest": ["memes"],
+        }
+        persona = GeneratedPersona.model_validate(data)
+        assert persona.communication_frequency == CommunicationFrequency.HIGH
+        assert isinstance(persona.communication_frequency, CommunicationFrequency)
+        assert persona.typical_response_time == ResponseTime.INSTANT
+        assert isinstance(persona.typical_response_time, ResponseTime)
