@@ -3,6 +3,7 @@ from imessage_data_foundry.llm.base import LLMProvider
 from imessage_data_foundry.llm.config import LLMConfig, ProviderType
 from imessage_data_foundry.llm.local_provider import LocalMLXProvider
 from imessage_data_foundry.llm.openai_provider import OpenAIProvider
+from imessage_data_foundry.settings.storage import SettingsStorage
 
 
 class ProviderNotAvailableError(Exception):
@@ -34,14 +35,19 @@ class ProviderManager:
 
         Priority order:
         1. User's preferred provider (if specified and available)
-        2. Default provider from config
-        3. Local MLX (always try as fallback)
-        4. OpenAI (if API key available)
-        5. Anthropic (if API key available)
+        2. Stored provider preference from settings
+        3. Default provider from config
+        4. Local MLX (always try as fallback)
+        5. OpenAI (if API key available)
+        6. Anthropic (if API key available)
 
         Raises:
             ProviderNotAvailableError: If no provider is available
         """
+        if preferred is None:
+            with SettingsStorage() as storage:
+                preferred = storage.get_provider()
+
         priority = [
             preferred or self.config.default_provider,
             ProviderType.LOCAL,
@@ -62,10 +68,9 @@ class ProviderManager:
             try:
                 if await provider.is_available():
                     return provider
-                if hasattr(provider, "get_availability_error"):
-                    error = provider.get_availability_error()
-                    if error:
-                        errors.append(f"  - {provider_type.value}: {error}")
+                reason = provider.get_unavailability_reason()
+                if reason:
+                    errors.append(f"  - {provider_type.value}: {reason}")
                 else:
                     errors.append(f"  - {provider_type.value}: Not available")
             except Exception as e:
@@ -89,6 +94,19 @@ class ProviderManager:
             if await provider.is_available():
                 available.append((provider_type, provider.name))
         return available
+
+    async def list_all_providers(self) -> list[tuple[ProviderType, str, bool, str | None]]:
+        """List all providers with availability status and reason.
+
+        Returns list of (type, name, is_available, unavailability_reason).
+        """
+        results = []
+        for provider_type in ProviderType:
+            provider = self._get_provider_instance(provider_type)
+            is_available = await provider.is_available()
+            reason = None if is_available else provider.get_unavailability_reason()
+            results.append((provider_type, provider.name, is_available, reason))
+        return results
 
     async def get_provider_by_type(self, provider_type: ProviderType) -> LLMProvider:
         """Get a specific provider by type.

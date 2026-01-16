@@ -65,8 +65,8 @@ class LLMConfig(BaseSettings):
     openai_api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
     anthropic_api_key: str | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
 
-    openai_model: str = "gpt-4o-mini"
-    anthropic_model: str = "claude-3-haiku-20240307"
+    openai_model: str = "gpt-5-nano"
+    anthropic_model: str = "claude-3-5-haiku-20241022"
 
     temperature: float = 0.8
     max_tokens_persona: int = 1024

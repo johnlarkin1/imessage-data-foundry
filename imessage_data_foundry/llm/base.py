@@ -16,6 +16,10 @@ class LLMProvider(ABC):
     @abstractmethod
     async def is_available(self) -> bool: ...
 
+    def get_unavailability_reason(self) -> str | None:
+        """Return reason why provider is unavailable, or None if available."""
+        return None
+
     @abstractmethod
     async def generate_text(self, prompt: str, max_tokens: int = 150) -> str: ...
 

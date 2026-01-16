@@ -16,7 +16,8 @@
       "WebFetch(domain:python-inquirer.readthedocs.io)",
       "Bash(find:*)",
       "Bash(python3:*)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git fetch:*)"
     ]
   }
 }

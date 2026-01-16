@@ -90,11 +90,11 @@ class TestLLMConfig:
 
     def test_openai_model_default(self):
         config = LLMConfig()
-        assert config.openai_model == "gpt-4o-mini"
+        assert config.openai_model == "gpt-5-nano"
 
     def test_anthropic_model_default(self):
         config = LLMConfig()
-        assert config.anthropic_model == "claude-3-haiku-20240307"
+        assert config.anthropic_model == "claude-3-5-haiku-20241022"
 
     def test_get_local_model_id(self):
         config = LLMConfig(local_model_size=LocalModelSize.SMALL)

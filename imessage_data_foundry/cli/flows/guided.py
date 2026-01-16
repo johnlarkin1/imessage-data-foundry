@@ -23,6 +23,7 @@ from imessage_data_foundry.cli.components.tables import (
     message_preview_table,
     persona_table,
 )
+from imessage_data_foundry.cli.provider_helper import get_provider_with_preference
 from imessage_data_foundry.cli.utils import (
     DEFAULT_MESSAGE_COUNT,
     DatabaseExistsAction,
@@ -39,7 +40,7 @@ from imessage_data_foundry.conversations.generator import (
 )
 from imessage_data_foundry.db.addressbook import AddressBookBuilder
 from imessage_data_foundry.db.builder import DatabaseBuilder
-from imessage_data_foundry.llm.manager import ProviderManager, ProviderNotAvailableError
+from imessage_data_foundry.llm.manager import ProviderManager
 from imessage_data_foundry.personas.models import (
     ChatType,
     ConversationConfig,
@@ -166,12 +167,8 @@ def run_guided(console: Console) -> Path | None:
     console.print()
     console.print("[dim]Checking LLM provider availability...[/dim]")
 
-    manager = ProviderManager()
-    try:
-        provider = asyncio.run(manager.get_provider())
-        console.print(f"[green]Using LLM provider: {provider.name}[/green]")
-    except ProviderNotAvailableError as e:
-        console.print(Panel(f"[red]Error:[/red] {e}", border_style="red"))
+    provider = get_provider_with_preference(console)
+    if provider is None:
         return None
 
     conversations_to_generate: list[tuple[Persona, str | None]] = []
@@ -206,7 +203,7 @@ def run_guided(console: Console) -> Path | None:
     last_provider_name = provider.name
 
     with DatabaseBuilder(output_path, append=append_mode) as builder:
-        generator = ConversationGenerator(manager)
+        generator = ConversationGenerator(ProviderManager())
 
         with create_generation_progress() as progress:
             for contact, seed in conversations_to_generate:

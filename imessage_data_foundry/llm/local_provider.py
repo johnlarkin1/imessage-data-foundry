@@ -42,7 +42,7 @@ class LocalMLXProvider(LLMProvider):
             self._availability_error = f"Cannot access model {self._model_id}: {e}"
             return False
 
-    def get_availability_error(self) -> str | None:
+    def get_unavailability_reason(self) -> str | None:
         return self._availability_error
 
     async def _ensure_model_loaded(self) -> None:
