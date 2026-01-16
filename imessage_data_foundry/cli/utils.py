@@ -100,6 +100,9 @@ def handle_existing_database(output_path: Path) -> tuple[DatabaseExistsAction, P
 
     if action == DatabaseExistsAction.OVERWRITE:
         output_path.unlink()
+        addressbook_path = get_addressbook_path(output_path)
+        if addressbook_path.exists():
+            addressbook_path.unlink()
 
     return action, final_path
 
