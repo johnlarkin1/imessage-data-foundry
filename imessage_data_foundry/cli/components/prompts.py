@@ -4,7 +4,13 @@ from typing import Any, TypeVar
 
 from InquirerPy import inquirer
 from InquirerPy.validator import EmptyInputValidator, NumberValidator
+from prompt_toolkit.keys import Keys
 
+from imessage_data_foundry.cli.components.autocomplete import (
+    AutocompleteContext,
+    AutocompleteField,
+    generate_autocomplete_sync,
+)
 from imessage_data_foundry.personas.models import (
     CommunicationFrequency,
     EmojiUsage,
@@ -36,12 +42,33 @@ def confirm_prompt(message: str, default: bool = True) -> bool:
     return result if result is not None else False
 
 
-def text_prompt(message: str, default: str = "", validate: bool = False) -> str:
-    prompt = inquirer.text(
-        message=message,
-        default=default,
-        validate=EmptyInputValidator("This field cannot be empty") if validate else None,
-    )
+def text_prompt(
+    message: str,
+    default: str = "",
+    validate: bool = False,
+    autocomplete_context: AutocompleteContext | None = None,
+) -> str:
+    kwargs: dict[str, Any] = {
+        "message": message,
+        "default": default,
+        "validate": EmptyInputValidator("This field cannot be empty") if validate else None,
+    }
+    if autocomplete_context:
+        kwargs["long_instruction"] = "Tab to AI autocomplete a given answer"
+
+    prompt = inquirer.text(**kwargs)
+
+    if autocomplete_context:
+
+        @prompt.register_kb(Keys.Tab)
+        def _autocomplete(event: Any) -> None:
+            buffer = event.app.current_buffer
+            current_text = buffer.text
+            result = generate_autocomplete_sync(autocomplete_context, current_text)
+            if result:
+                buffer.text = result
+                buffer.cursor_position = len(result)
+
     result = prompt.execute()
     return result.strip() if result else default
 
@@ -95,19 +122,41 @@ def persona_input_prompts(is_self: bool = False, existing: Persona | None = None
 
     result: dict[str, Any] = {}
     result["name"] = text_prompt(f"Enter {label} name", default=default_name, validate=True)
+
+    name = result["name"]
+    personality_ctx = AutocompleteContext(
+        field=AutocompleteField.PERSONALITY,
+        name=name,
+        is_self=is_self,
+    )
     result["personality"] = text_prompt(
         f"Describe {label} personality (2-3 sentences)",
         default=default_personality,
+        autocomplete_context=personality_ctx,
+    )
+
+    style_ctx = AutocompleteContext(
+        field=AutocompleteField.WRITING_STYLE,
+        name=name,
+        is_self=is_self,
+        existing_values={"personality": result["personality"]},
     )
     result["writing_style"] = text_prompt(
         f"Describe {label} writing style (e.g., casual, formal, uses slang)",
         default=default_writing_style,
+        autocomplete_context=style_ctx,
     )
 
     if not is_self:
+        relationship_ctx = AutocompleteContext(
+            field=AutocompleteField.RELATIONSHIP,
+            name=name,
+            is_self=is_self,
+        )
         result["relationship"] = text_prompt(
             "Relationship to you (e.g., friend, coworker, family)",
             default=default_relationship,
+            autocomplete_context=relationship_ctx,
         )
     else:
         result["relationship"] = "self"
@@ -134,7 +183,20 @@ def persona_input_prompts(is_self: bool = False, existing: Persona | None = None
     )
 
     topics_default_str = ", ".join(default_topics) if default_topics else ""
-    topics_input = text_prompt("Topics of interest (comma-separated)", default=topics_default_str)
+    topics_ctx = AutocompleteContext(
+        field=AutocompleteField.TOPICS,
+        name=name,
+        is_self=is_self,
+        existing_values={
+            "personality": result["personality"],
+            "relationship": result["relationship"],
+        },
+    )
+    topics_input = text_prompt(
+        "Topics of interest (comma-separated)",
+        default=topics_default_str,
+        autocomplete_context=topics_ctx,
+    )
     result["topics_of_interest"] = [t.strip() for t in topics_input.split(",") if t.strip()]
 
     return result
@@ -224,3 +286,15 @@ def database_exists_prompt(path: Path) -> tuple[str, Path | None]:
         new_path = Path(new_path_str) if new_path_str else None
 
     return action if action else "cancel", new_path
+
+
+def existing_self_prompt(existing_self: Persona) -> bool:
+    choices = [
+        {"name": f"Use existing self ({existing_self.name})", "value": True},
+        {"name": "Create new self (replaces existing)", "value": False},
+    ]
+    result = inquirer.select(
+        message=f"A self persona already exists: {existing_self.name} ({existing_self.display_identifier}). What would you like to do?",
+        choices=choices,
+    ).execute()
+    return result if result is not None else True

@@ -2,7 +2,10 @@ from datetime import UTC, datetime, timedelta
 from enum import Enum
 from pathlib import Path
 
-from imessage_data_foundry.cli.components.prompts import database_exists_prompt
+from imessage_data_foundry.cli.components.prompts import (
+    database_exists_prompt,
+    existing_self_prompt,
+)
 from imessage_data_foundry.llm.models import GeneratedPersona
 from imessage_data_foundry.personas.models import IdentifierType, Persona
 from imessage_data_foundry.utils.phone_numbers import generate_fake_phone
@@ -94,3 +97,7 @@ def handle_existing_database(output_path: Path) -> tuple[DatabaseExistsAction, P
         output_path.unlink()
 
     return action, final_path
+
+
+def prompt_use_existing_self(existing_self: Persona) -> bool:
+    return existing_self_prompt(existing_self)

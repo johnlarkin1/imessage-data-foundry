@@ -25,6 +25,7 @@ from imessage_data_foundry.cli.utils import (
     generated_to_full_persona,
     get_default_time_range,
     handle_existing_database,
+    prompt_use_existing_self,
 )
 from imessage_data_foundry.conversations.generator import (
     ConversationGenerator,
@@ -45,7 +46,34 @@ def run_quick_start(console: Console) -> Path | None:
     console.print("[dim]This will auto-generate personas and conversations using AI.[/dim]")
     console.print()
 
-    your_name = text_prompt("What's your name?", default="Me", validate=True)
+    action, output_path = handle_existing_database(ensure_output_dir())
+
+    if action == DatabaseExistsAction.CANCEL:
+        console.print("[yellow]Cancelled.[/yellow]")
+        return None
+
+    append_mode = action == DatabaseExistsAction.APPEND
+
+    self_persona = None
+    with PersonaStorage() as storage:
+        if append_mode:
+            existing_self = storage.get_self()
+            if existing_self:
+                use_existing = prompt_use_existing_self(existing_self)
+                if use_existing:
+                    self_persona = existing_self
+                    console.print(f"[dim]Using existing self: {existing_self.name}[/dim]")
+                else:
+                    storage.delete(existing_self.id)
+        else:
+            for existing in storage.list_all():
+                storage.delete(existing.id)
+
+    console.print()
+    if self_persona is None:
+        your_name = text_prompt("What's your name?", default="Me", validate=True)
+    else:
+        your_name = self_persona.name
 
     console.print()
     console.print("[dim]Checking LLM provider availability...[/dim]")
@@ -73,7 +101,8 @@ def run_quick_start(console: Console) -> Path | None:
             console.print(Panel(f"[red]Failed to generate personas:[/red] {e}", border_style="red"))
             return None
 
-    self_persona = create_self_persona(name=your_name)
+    if self_persona is None:
+        self_persona = create_self_persona(name=your_name)
     contact_personas = [generated_to_full_persona(gp) for gp in generated_personas]
     all_personas = [self_persona] + contact_personas
 
@@ -86,24 +115,16 @@ def run_quick_start(console: Console) -> Path | None:
         return None
 
     with PersonaStorage() as storage:
-        existing_self = storage.get_self()
-        if existing_self:
-            console.print("[dim]Removing existing self persona...[/dim]")
-            storage.delete(existing_self.id)
-
-        for existing in storage.list_all():
-            storage.delete(existing.id)
-
-        storage.create_many(all_personas)
+        if not append_mode:
+            storage.create_many(all_personas)
+        else:
+            existing_self = storage.get_self()
+            if not existing_self:
+                storage.create(self_persona)
+            for contact in contact_personas:
+                storage.create(contact)
         console.print(f"[green]Saved {len(all_personas)} personas to storage.[/green]")
 
-    action, output_path = handle_existing_database(ensure_output_dir())
-
-    if action == DatabaseExistsAction.CANCEL:
-        console.print("[yellow]Cancelled.[/yellow]")
-        return None
-
-    append_mode = action == DatabaseExistsAction.APPEND
     start_time, end_time = get_default_time_range()
 
     console.print()

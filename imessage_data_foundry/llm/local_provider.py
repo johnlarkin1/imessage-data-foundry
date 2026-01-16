@@ -85,6 +85,11 @@ class LocalMLXProvider(LLMProvider):
             text = bracket_match.group(1)
         return json.loads(text)
 
+    async def generate_text(self, prompt: str, max_tokens: int = 150) -> str:
+        await self._ensure_model_loaded()
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._generate_sync, prompt, max_tokens)
+
     async def generate_personas(
         self,
         constraints: PersonaConstraints | None = None,

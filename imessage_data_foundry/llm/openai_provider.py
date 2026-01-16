@@ -29,6 +29,17 @@ class OpenAIProvider(LLMProvider):
             self._client = AsyncOpenAI(api_key=self.config.openai_api_key)
         return self._client
 
+    async def generate_text(self, prompt: str, max_tokens: int = 150) -> str:
+        client = self._get_client()
+        response = await client.chat.completions.create(
+            model=self.config.openai_model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.config.temperature,
+            max_tokens=max_tokens,
+        )
+        content = response.choices[0].message.content
+        return content or ""
+
     async def generate_personas(
         self,
         constraints: PersonaConstraints | None = None,

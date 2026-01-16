@@ -29,6 +29,7 @@ from imessage_data_foundry.cli.utils import (
     ensure_output_dir,
     get_default_time_range,
     handle_existing_database,
+    prompt_use_existing_self,
 )
 from imessage_data_foundry.conversations.generator import (
     ConversationGenerator,
@@ -71,15 +72,41 @@ def run_guided(console: Console) -> Path | None:
     console.print(Panel("[bold blue]Guided Mode[/bold blue]", border_style="blue"))
     console.print()
 
-    console.print("[bold]Step 1: Create Your Persona[/bold]")
-    console.print("[dim]First, let's create your persona (the 'self' user).[/dim]")
-    console.print()
+    action, output_path = handle_existing_database(ensure_output_dir())
 
-    self_inputs = persona_input_prompts(is_self=True)
-    self_persona = create_persona_from_input(self_inputs, is_self=True)
+    if action == DatabaseExistsAction.CANCEL:
+        console.print("[yellow]Cancelled.[/yellow]")
+        return None
 
-    console.print()
-    console.print("[green]Self persona created![/green]")
+    append_mode = action == DatabaseExistsAction.APPEND
+
+    self_persona = None
+    with PersonaStorage() as storage:
+        if append_mode:
+            existing_self = storage.get_self()
+            if existing_self:
+                use_existing = prompt_use_existing_self(existing_self)
+                if use_existing:
+                    self_persona = existing_self
+                    console.print(f"[dim]Using existing self: {existing_self.name}[/dim]")
+                else:
+                    storage.delete(existing_self.id)
+        else:
+            for existing in storage.list_all():
+                storage.delete(existing.id)
+
+    if self_persona is None:
+        console.print("[bold]Step 1: Create Your Persona[/bold]")
+        console.print("[dim]First, let's create your persona (the 'self' user).[/dim]")
+        console.print()
+
+        self_inputs = persona_input_prompts(is_self=True)
+        self_persona = create_persona_from_input(self_inputs, is_self=True)
+
+        console.print()
+        console.print("[green]Self persona created![/green]")
+    else:
+        console.print("[dim]Skipping self persona creation (using existing).[/dim]")
     console.print()
 
     console.print("[bold]Step 2: Create Contact Personas[/bold]")
@@ -111,14 +138,14 @@ def run_guided(console: Console) -> Path | None:
         return None
 
     with PersonaStorage() as storage:
-        existing_self = storage.get_self()
-        if existing_self:
-            storage.delete(existing_self.id)
-
-        for existing in storage.list_all():
-            storage.delete(existing.id)
-
-        storage.create_many(all_personas)
+        if not append_mode:
+            storage.create_many(all_personas)
+        else:
+            existing_self = storage.get_self()
+            if not existing_self:
+                storage.create(self_persona)
+            for contact in contact_personas:
+                storage.create(contact)
         console.print(f"[green]Saved {len(all_personas)} personas.[/green]")
 
     console.print()
@@ -164,13 +191,6 @@ def run_guided(console: Console) -> Path | None:
         for contact in contact_personas:
             conversations_to_generate.append((contact, None))
 
-    action, output_path = handle_existing_database(ensure_output_dir())
-
-    if action == DatabaseExistsAction.CANCEL:
-        console.print("[yellow]Cancelled.[/yellow]")
-        return None
-
-    append_mode = action == DatabaseExistsAction.APPEND
     start_time, end_time = get_default_time_range()
 
     console.print()
