@@ -12,6 +12,10 @@ Good use cases for this synthetic data are:
 - **Development** of applications that interface with iMessage data
 - **Demos** and documentation requiring realistic message data
 
+## Demo
+
+[![iMessage Data Foundry Demo](https://img.youtube.com/vi/t_6QnWvlkCI/maxresdefault.jpg)](https://www.youtube.com/watch?v=t_6QnWvlkCI)
+
 ## Features
 
 - **Full Schema Replication** — Exact match of macOS iMessage `chat.db` structure
