@@ -63,7 +63,6 @@ def validate_schema(db_path: str | Path) -> ValidationResult:
     try:
         tables = get_all_tables(conn)
 
-        # Required core tables
         required_tables = [
             "message",
             "handle",
@@ -80,7 +79,6 @@ def validate_schema(db_path: str | Path) -> ValidationResult:
             if table not in tables:
                 errors.append(f"Missing required table: {table}")
 
-        # Validate message table has critical columns
         if "message" in tables:
             msg_info = get_table_info(conn, "message")
             required_msg_cols = [
@@ -98,7 +96,6 @@ def validate_schema(db_path: str | Path) -> ValidationResult:
                 if col not in msg_info.columns:
                     errors.append(f"message table missing column: {col}")
 
-        # Validate handle table
         if "handle" in tables:
             handle_info = get_table_info(conn, "handle")
             required_handle_cols = ["ROWID", "id", "service"]
@@ -106,7 +103,6 @@ def validate_schema(db_path: str | Path) -> ValidationResult:
                 if col not in handle_info.columns:
                     errors.append(f"handle table missing column: {col}")
 
-        # Validate chat table
         if "chat" in tables:
             chat_info = get_table_info(conn, "chat")
             required_chat_cols = [
@@ -120,7 +116,6 @@ def validate_schema(db_path: str | Path) -> ValidationResult:
                 if col not in chat_info.columns:
                     errors.append(f"chat table missing column: {col}")
 
-        # Validate join tables have correct columns
         if "chat_message_join" in tables:
             cmj_info = get_table_info(conn, "chat_message_join")
             if "chat_id" not in cmj_info.columns:
@@ -135,7 +130,6 @@ def validate_schema(db_path: str | Path) -> ValidationResult:
             if "handle_id" not in chj_info.columns:
                 errors.append("chat_handle_join missing handle_id column")
 
-        # Check for key indexes (warning only)
         indexes = get_all_indexes(conn)
         expected_indexes = [
             "message_idx_handle",
@@ -163,7 +157,6 @@ def validate_foreign_keys(db_path: str | Path) -> ValidationResult:
     conn = sqlite3.connect(str(db_path))
 
     try:
-        # Check that all message handle_ids exist in handle table
         cursor = conn.execute(
             """
             SELECT m.ROWID, m.handle_id
@@ -176,7 +169,6 @@ def validate_foreign_keys(db_path: str | Path) -> ValidationResult:
         if orphaned:
             errors.append(f"Found {len(orphaned)} messages with invalid handle_id")
 
-        # Check chat_message_join references
         cursor = conn.execute(
             """
             SELECT cmj.chat_id, cmj.message_id
@@ -189,7 +181,6 @@ def validate_foreign_keys(db_path: str | Path) -> ValidationResult:
         if orphaned_joins:
             errors.append(f"Found {len(orphaned_joins)} invalid chat_message_join entries")
 
-        # Check chat_handle_join references
         cursor = conn.execute(
             """
             SELECT chj.chat_id, chj.handle_id
@@ -202,7 +193,6 @@ def validate_foreign_keys(db_path: str | Path) -> ValidationResult:
         if orphaned_handle_joins:
             errors.append(f"Found {len(orphaned_handle_joins)} invalid chat_handle_join entries")
 
-        # Check message_attachment_join references
         cursor = conn.execute(
             """
             SELECT maj.message_id, maj.attachment_id
@@ -234,7 +224,6 @@ def validate_guid_uniqueness(db_path: str | Path) -> ValidationResult:
     conn = sqlite3.connect(str(db_path))
 
     try:
-        # Check message GUIDs
         cursor = conn.execute(
             """
             SELECT guid, COUNT(*) as cnt
@@ -247,7 +236,6 @@ def validate_guid_uniqueness(db_path: str | Path) -> ValidationResult:
         if dupes:
             errors.append(f"Found {len(dupes)} duplicate message GUIDs")
 
-        # Check chat GUIDs
         cursor = conn.execute(
             """
             SELECT guid, COUNT(*) as cnt
@@ -260,7 +248,6 @@ def validate_guid_uniqueness(db_path: str | Path) -> ValidationResult:
         if dupes:
             errors.append(f"Found {len(dupes)} duplicate chat GUIDs")
 
-        # Check attachment GUIDs
         cursor = conn.execute(
             """
             SELECT guid, COUNT(*) as cnt
@@ -324,7 +311,6 @@ def compare_schemas(
             if not table.startswith("sqlite_"):
                 warnings.append(f"Extra table not in reference: {table}")
 
-        # Compare columns in common tables
         for table in gen_tables & ref_tables:
             if table.startswith("sqlite_"):
                 continue

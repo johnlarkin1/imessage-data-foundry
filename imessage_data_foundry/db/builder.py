@@ -23,27 +23,26 @@ class DatabaseBuilder:
         output_path: str | Path,
         version: str | SchemaVersion | None = None,
         in_memory: bool = False,
+        append: bool = False,
     ) -> None:
         self.output_path = Path(output_path)
         self.version = get_schema_for_version(version) if version else detect_schema_version()
         self.in_memory = in_memory
+        self.append = append
 
         self._connection: sqlite3.Connection | None = None
         self._finalized: bool = False
 
-        # ID tracking (ROWID starts at 1)
         self._next_handle_rowid: int = 1
         self._next_chat_rowid: int = 1
         self._next_message_rowid: int = 1
         self._next_attachment_rowid: int = 1
 
-        # GUID tracking for uniqueness validation
         self._message_guids: set[str] = set()
         self._chat_guids: set[str] = set()
         self._attachment_guids: set[str] = set()
 
-        # Identifier -> ROWID mapping for deduplication
-        self._handle_ids: dict[tuple[str, str], int] = {}  # (identifier, service) -> rowid
+        self._handle_ids: dict[tuple[str, str], int] = {}
         self._chat_rowids: set[int] = set()
 
     @property
@@ -58,26 +57,66 @@ class DatabaseBuilder:
         if not self.in_memory:
             self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        self._connection = sqlite3.connect(db_path)
-        self._connection.row_factory = sqlite3.Row
+        if self.append and self.output_path.exists() and not self.in_memory:
+            self._connection = sqlite3.connect(db_path)
+            self._connection.row_factory = sqlite3.Row
+            self._load_existing_state()
+        else:
+            self._connection = sqlite3.connect(db_path)
+            self._connection.row_factory = sqlite3.Row
+            self._create_schema()
 
+    def _create_schema(self) -> None:
         schema = get_schema_module(self.version)
 
         for table_sql in schema.get_tables().values():
-            self._connection.execute(table_sql)
+            self.connection.execute(table_sql)
         for index_sql in schema.get_indexes():
-            self._connection.execute(index_sql)
+            self.connection.execute(index_sql)
         for trigger_sql in schema.get_triggers():
-            self._connection.execute(trigger_sql)
+            self.connection.execute(trigger_sql)
 
         metadata = schema.get_metadata()
         for key, value in metadata.items():
-            self._connection.execute(
+            self.connection.execute(
                 "INSERT INTO _SqliteDatabaseProperties (key, value) VALUES (?, ?)",
                 (key, str(value)),
             )
 
-        self._connection.commit()
+        self.connection.commit()
+
+    def _load_existing_state(self) -> None:
+        cursor = self.connection.execute("SELECT MAX(ROWID) FROM handle")
+        max_handle = cursor.fetchone()[0]
+        self._next_handle_rowid = (max_handle or 0) + 1
+
+        cursor = self.connection.execute("SELECT MAX(ROWID) FROM chat")
+        max_chat = cursor.fetchone()[0]
+        self._next_chat_rowid = (max_chat or 0) + 1
+
+        cursor = self.connection.execute("SELECT MAX(ROWID) FROM message")
+        max_message = cursor.fetchone()[0]
+        self._next_message_rowid = (max_message or 0) + 1
+
+        cursor = self.connection.execute("SELECT MAX(ROWID) FROM attachment")
+        max_attachment = cursor.fetchone()[0]
+        self._next_attachment_rowid = (max_attachment or 0) + 1
+
+        cursor = self.connection.execute("SELECT guid FROM message")
+        self._message_guids = {row[0] for row in cursor.fetchall()}
+
+        cursor = self.connection.execute("SELECT guid FROM chat")
+        self._chat_guids = {row[0] for row in cursor.fetchall()}
+
+        cursor = self.connection.execute("SELECT guid FROM attachment")
+        self._attachment_guids = {row[0] for row in cursor.fetchall()}
+
+        cursor = self.connection.execute("SELECT ROWID, id, service FROM handle")
+        for row in cursor.fetchall():
+            self._handle_ids[(row[1], row[2])] = row[0]
+
+        cursor = self.connection.execute("SELECT ROWID FROM chat")
+        self._chat_rowids = {row[0] for row in cursor.fetchall()}
 
     def add_handle(
         self,
@@ -129,7 +168,6 @@ class DatabaseBuilder:
         if chat_type == "direct":
             style = 43
             if identifier is None and handles:
-                # Get the identifier from the first handle
                 cursor = self.connection.execute(
                     "SELECT id FROM handle WHERE ROWID = ?",
                     (handles[0],),
@@ -219,9 +257,9 @@ class DatabaseBuilder:
                 date_read,
                 date_delivered,
                 1 if is_from_me else 0,
-                1 if is_from_me else 0,  # is_sent
-                1,  # is_delivered
-                1 if not is_from_me else 0,  # is_read (received messages are read)
+                1 if is_from_me else 0,
+                1,
+                1 if not is_from_me else 0,
             ),
         )
         self.connection.execute(
@@ -377,7 +415,6 @@ class DatabaseBuilder:
         self.connection.commit()
 
         if self.in_memory:
-            # Copy in-memory database to file
             self.output_path.parent.mkdir(parents=True, exist_ok=True)
             file_conn = sqlite3.connect(str(self.output_path))
             self.connection.backup(file_conn)

@@ -85,8 +85,8 @@ class TestLLMConfig:
         assert config.local_model_size == LocalModelSize.AUTO
         assert config.local_model_id is None
         assert config.temperature == 0.8
-        assert config.message_batch_size == 30
-        assert config.context_window_size == 15
+        assert config.message_batch_size == 10
+        assert config.context_window_size == 10
 
     def test_openai_model_default(self):
         config = LLMConfig()

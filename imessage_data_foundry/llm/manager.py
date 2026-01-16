@@ -56,13 +56,26 @@ class ProviderManager:
                 seen.add(p)
                 unique_priority.append(p)
 
+        errors: list[str] = []
         for provider_type in unique_priority:
             provider = self._get_provider_instance(provider_type)
-            if await provider.is_available():
-                return provider
+            try:
+                if await provider.is_available():
+                    return provider
+                if hasattr(provider, "get_availability_error"):
+                    error = provider.get_availability_error()
+                    if error:
+                        errors.append(f"  - {provider_type.value}: {error}")
+                else:
+                    errors.append(f"  - {provider_type.value}: Not available")
+            except Exception as e:
+                errors.append(f"  - {provider_type.value}: {e}")
 
+        error_details = "\n".join(errors) if errors else ""
         raise ProviderNotAvailableError(
-            "No LLM provider available. Options:\n"
+            "No LLM provider available.\n\n"
+            f"Tried providers:\n{error_details}\n\n"
+            "Options:\n"
             "  1. Install mlx-lm for local inference: pip install mlx-lm\n"
             "  2. Set OPENAI_API_KEY environment variable\n"
             "  3. Set ANTHROPIC_API_KEY environment variable"

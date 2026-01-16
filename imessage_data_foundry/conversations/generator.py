@@ -234,6 +234,10 @@ class ConversationGenerator:
         context_size = self.config.context_window_size
         total_batches = (target_count + batch_size - 1) // batch_size
 
+        self_persona_id = next(
+            (p["id"] for p in persona_descriptions if p.get("is_self") == "True"), None
+        )
+
         self._partial_messages = []
 
         batch_num = 0
@@ -262,6 +266,9 @@ class ConversationGenerator:
                 count=current_batch_size,
                 seed=seed,
             )
+
+            for msg in batch:
+                msg.is_from_me = msg.sender_id == self_persona_id
 
             messages.extend(batch)
             self._partial_messages = messages.copy()

@@ -8,7 +8,15 @@
       "mcp__plugin_context7_context7__query-docs",
       "Skill(generate-pr)",
       "WebSearch",
-      "Bash(make lint:*)"
+      "Bash(make lint:*)",
+      "Bash(wc:*)",
+      "Bash(make fmt:*)",
+      "Bash(make test:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:python-inquirer.readthedocs.io)",
+      "Bash(find:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

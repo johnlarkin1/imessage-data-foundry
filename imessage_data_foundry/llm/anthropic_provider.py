@@ -35,6 +35,17 @@ class AnthropicProvider(LLMProvider):
             self._client = AsyncAnthropic(api_key=self.config.anthropic_api_key)
         return self._client
 
+    async def generate_text(self, prompt: str, max_tokens: int = 150) -> str:
+        client = self._get_client()
+        response = await client.messages.create(
+            model=self.config.anthropic_model,
+            max_tokens=max_tokens,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        if response.content and hasattr(response.content[0], "text"):
+            return response.content[0].text  # type: ignore[union-attr]
+        return ""
+
     def _extract_json(self, text: str) -> Any:
         text = text.strip()
         json_match = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
