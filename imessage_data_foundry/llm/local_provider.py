@@ -3,9 +3,10 @@ import json
 import re
 from typing import Any
 
+from huggingface_hub import model_info
 from mlx_lm import generate as mlx_generate
 from mlx_lm import load as mlx_load
-from mlx_lm.tokenizer_utils import TokenizerWrapper
+from mlx_lm.sample_utils import make_sampler
 
 from imessage_data_foundry.llm.base import LLMProvider
 from imessage_data_foundry.llm.config import LLMConfig
@@ -17,8 +18,9 @@ class LocalMLXProvider(LLMProvider):
     def __init__(self, config: LLMConfig | None = None):
         self.config = config or LLMConfig()
         self._model: Any = None
-        self._tokenizer: TokenizerWrapper | None = None
+        self._tokenizer: Any = None
         self._model_id = self.config.get_local_model_id()
+        self._availability_error: str | None = None
 
     @property
     def name(self) -> str:
@@ -29,12 +31,23 @@ class LocalMLXProvider(LLMProvider):
         return False
 
     async def is_available(self) -> bool:
-        return True
+        try:
+            loop = asyncio.get_event_loop()
+            info = await loop.run_in_executor(None, lambda: model_info(self._model_id))
+            if info is None:
+                self._availability_error = f"Model {self._model_id} not found"
+                return False
+            return True
+        except Exception as e:
+            self._availability_error = f"Cannot access model {self._model_id}: {e}"
+            return False
+
+    def get_availability_error(self) -> str | None:
+        return self._availability_error
 
     async def _ensure_model_loaded(self) -> None:
         if self._model is not None:
             return
-
         loop = asyncio.get_event_loop()
         self._model, self._tokenizer = await loop.run_in_executor(None, self._load_model)
 
@@ -51,12 +64,13 @@ class LocalMLXProvider(LLMProvider):
             messages, tokenize=False, add_generation_prompt=True
         )
 
+        sampler = make_sampler(temp=self.config.temperature)
         response = mlx_generate(
             self._model,
             self._tokenizer,
             prompt=formatted,
             max_tokens=max_tokens,
-            temp=self.config.temperature,
+            sampler=sampler,
             verbose=False,
         )
         return response

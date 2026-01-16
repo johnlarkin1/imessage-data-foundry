@@ -25,7 +25,13 @@ class PromptTemplates:
             - A distinct personality that affects their texting behavior
             - A specific writing style (formal, casual, uses slang, abbreviations, etc.)
             - Defined emoji usage patterns matching their personality
-            - 3-5 topics they naturally discuss
+            - 3-5 UNIQUE topics they naturally discuss
+
+            CRITICAL: Each persona must have DIFFERENT topics_of_interest from the others.
+            Avoid overlap - if one persona talks about sports, others should NOT.
+            Example topic categories to diversify across: tech, cooking, fitness, movies,
+            travel, music, gaming, books, art, science, fashion, pets, outdoor activities,
+            career/work, parenting, investing, home improvement, photography, gardening.
 
             IMPORTANT: Return ONLY valid JSON with no additional text or explanation.
 
@@ -49,33 +55,26 @@ class PromptTemplates:
         )
         seed_text = f"\nConversation theme/topic: {seed}" if seed else ""
 
-        return dedent(f"""
-            You are simulating a realistic text message conversation between people.
+        participant_ids = [p["id"] for p in persona_descriptions]
+        id_list = ", ".join(f'"{pid}"' for pid in participant_ids)
 
-            PARTICIPANTS:
+        return dedent(f"""
+            Generate {count} text messages between these people:
+
             {personas_text}
 
-            CONVERSATION CONTEXT:
             {context_text}
             {seed_text}
 
-            Generate the next {count} messages in this conversation.
+            RULES:
+            - ALL messages MUST be in English only
+            - Each sender_id must be one of: {id_list}
+            - Match each person's writing style
+            - Vary message lengths naturally
+            - Alternate between participants
 
-            IMPORTANT GUIDELINES:
-            - Each message should feel like a genuine text message
-            - Match each sender's personality, writing style, and emoji usage
-            - Vary message lengths naturally (some short "lol ok", some longer)
-            - Include natural conversation patterns (questions, responses, topic shifts)
-            - The "self" persona (is_from_me=true) should be one participant
-            - Alternate between participants naturally, not strictly back-and-forth
-
-            IMPORTANT: Return ONLY valid JSON with no additional text.
-
-            Return a JSON array of message objects:
-            [
-              {{"sender_id": "<persona_id>", "text": "<message text>", "is_from_me": <boolean>}},
-              ...
-            ]
+            Return ONLY a JSON array, no other text:
+            [{{"sender_id": "...", "text": "...", "is_from_me": false}}, ...]
 
             Generate exactly {count} messages.
         """).strip()

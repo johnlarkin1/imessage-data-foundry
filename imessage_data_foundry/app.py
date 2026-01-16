@@ -1,6 +1,4 @@
-def main() -> None:
-    print("iMessage Data Foundry - Coming soon!")
-
+from imessage_data_foundry.cli.app import main
 
 if __name__ == "__main__":
     main()
