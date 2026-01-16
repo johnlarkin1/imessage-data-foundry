@@ -357,3 +357,116 @@ def run_integrity_check(db_path: str | Path) -> ValidationResult:
         errors=errors,
         warnings=warnings,
     )
+
+
+def validate_addressbook_schema(db_path: str | Path) -> ValidationResult:
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    try:
+        conn = sqlite3.connect(str(db_path))
+    except sqlite3.Error as e:
+        return ValidationResult(
+            is_valid=False,
+            errors=[f"Failed to open AddressBook database: {e}"],
+        )
+
+    try:
+        tables = get_all_tables(conn)
+
+        required_tables = ["ZABCDRECORD", "ZABCDPHONENUMBER", "ZABCDEMAILADDRESS"]
+
+        for table in required_tables:
+            if table not in tables:
+                errors.append(f"Missing required table: {table}")
+
+        if "ZABCDRECORD" in tables:
+            record_info = get_table_info(conn, "ZABCDRECORD")
+            required_cols = ["Z_PK", "ZFIRSTNAME", "ZLASTNAME", "ZMIDDLENAME", "ZNICKNAME"]
+            for col in required_cols:
+                if col not in record_info.columns:
+                    errors.append(f"ZABCDRECORD missing column: {col}")
+
+        if "ZABCDPHONENUMBER" in tables:
+            phone_info = get_table_info(conn, "ZABCDPHONENUMBER")
+            required_cols = ["Z_PK", "ZOWNER", "ZFULLNUMBER"]
+            for col in required_cols:
+                if col not in phone_info.columns:
+                    errors.append(f"ZABCDPHONENUMBER missing column: {col}")
+
+        if "ZABCDEMAILADDRESS" in tables:
+            email_info = get_table_info(conn, "ZABCDEMAILADDRESS")
+            required_cols = ["Z_PK", "ZOWNER", "ZADDRESS"]
+            for col in required_cols:
+                if col not in email_info.columns:
+                    errors.append(f"ZABCDEMAILADDRESS missing column: {col}")
+
+        indexes = get_all_indexes(conn)
+        expected_indexes = [
+            "ZABCDPHONENUMBER_ZOWNER_INDEX",
+            "ZABCDEMAILADDRESS_ZOWNER_INDEX",
+        ]
+        for idx in expected_indexes:
+            if idx not in indexes:
+                warnings.append(f"Missing recommended index: {idx}")
+
+    finally:
+        conn.close()
+
+    return ValidationResult(
+        is_valid=len(errors) == 0,
+        errors=errors,
+        warnings=warnings,
+    )
+
+
+def validate_addressbook_foreign_keys(db_path: str | Path) -> ValidationResult:
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    conn = sqlite3.connect(str(db_path))
+
+    try:
+        cursor = conn.execute(
+            """
+            SELECT Z_PK, ZOWNER
+            FROM ZABCDPHONENUMBER
+            WHERE ZOWNER NOT IN (SELECT Z_PK FROM ZABCDRECORD)
+        """
+        )
+        orphaned = cursor.fetchall()
+        if orphaned:
+            errors.append(f"Found {len(orphaned)} phone numbers with invalid ZOWNER")
+
+        cursor = conn.execute(
+            """
+            SELECT Z_PK, ZOWNER
+            FROM ZABCDEMAILADDRESS
+            WHERE ZOWNER NOT IN (SELECT Z_PK FROM ZABCDRECORD)
+        """
+        )
+        orphaned_emails = cursor.fetchall()
+        if orphaned_emails:
+            errors.append(f"Found {len(orphaned_emails)} email addresses with invalid ZOWNER")
+
+    finally:
+        conn.close()
+
+    return ValidationResult(
+        is_valid=len(errors) == 0,
+        errors=errors,
+        warnings=warnings,
+    )
+
+
+def validate_addressbook(db_path: str | Path) -> ValidationResult:
+    result = ValidationResult(is_valid=True)
+
+    schema_result = validate_addressbook_schema(db_path)
+    result = result.merge(schema_result)
+
+    if schema_result.is_valid:
+        fk_result = validate_addressbook_foreign_keys(db_path)
+        result = result.merge(fk_result)
+
+    return result

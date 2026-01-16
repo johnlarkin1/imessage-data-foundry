@@ -21,7 +21,12 @@ class DatabaseExistsAction(str, Enum):
 DEFAULT_PERSONA_COUNT = 4
 DEFAULT_MESSAGE_COUNT = 100
 DEFAULT_OUTPUT_PATH = Path("./output/chat.db")
+DEFAULT_ADDRESSBOOK_NAME = "addressbook.db"
 DEFAULT_TIME_RANGE_DAYS = 30
+
+
+def get_addressbook_path(chat_db_path: Path) -> Path:
+    return chat_db_path.parent / DEFAULT_ADDRESSBOOK_NAME
 
 
 def ensure_output_dir(output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:

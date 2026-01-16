@@ -23,6 +23,7 @@ from imessage_data_foundry.cli.utils import (
     create_self_persona,
     ensure_output_dir,
     generated_to_full_persona,
+    get_addressbook_path,
     get_default_time_range,
     handle_existing_database,
     prompt_use_existing_self,
@@ -32,6 +33,7 @@ from imessage_data_foundry.conversations.generator import (
     GenerationResult,
     TimestampedMessage,
 )
+from imessage_data_foundry.db.addressbook import AddressBookBuilder
 from imessage_data_foundry.db.builder import DatabaseBuilder
 from imessage_data_foundry.llm.manager import ProviderManager, ProviderNotAvailableError
 from imessage_data_foundry.personas.models import ChatType, ConversationConfig, ServiceType
@@ -183,6 +185,10 @@ def run_quick_start(console: Console) -> Path | None:
 
     total_time = time.monotonic() - total_time_start
 
+    addressbook_path = get_addressbook_path(output_path)
+    with AddressBookBuilder(addressbook_path) as ab_builder:
+        ab_builder.add_all_personas(all_personas)
+
     console.print()
 
     if all_messages:
@@ -203,8 +209,9 @@ def run_quick_start(console: Console) -> Path | None:
     console.print()
     console.print(
         Panel(
-            f"[green]Database created at:[/green] [blue]{output_path.absolute()}[/blue]\n\n"
-            "[dim]You can use this database with imessage-exporter or other tools.[/dim]",
+            f"[green]iMessage database:[/green] [blue]{output_path.absolute()}[/blue]\n"
+            f"[green]AddressBook database:[/green] [blue]{addressbook_path.absolute()}[/blue]\n\n"
+            "[dim]You can use these databases with imessage-exporter or BRB.[/dim]",
             title="Complete",
             border_style="green",
         )
