@@ -11,6 +11,7 @@ from imessage_data_foundry.cli.components.autocomplete import (
     AutocompleteField,
     generate_autocomplete_sync,
 )
+from imessage_data_foundry.llm.config import ProviderType
 from imessage_data_foundry.personas.models import (
     CommunicationFrequency,
     EmojiUsage,
@@ -25,6 +26,7 @@ MAIN_MENU_CHOICES = [
     {"name": "Quick Start - Auto-generate personas and conversations", "value": "quick_start"},
     {"name": "Guided - Create personas manually with full control", "value": "guided"},
     {"name": "Manage Personas - Edit or delete existing personas", "value": "manage"},
+    {"name": "Settings - Configure LLM provider", "value": "settings"},
     {"name": "Exit", "value": "exit"},
 ]
 
@@ -298,3 +300,19 @@ def existing_self_prompt(existing_self: Persona) -> bool:
         choices=choices,
     ).execute()
     return result if result is not None else True
+
+
+def provider_select_prompt(
+    available_providers: list[tuple[ProviderType, str]],
+    current: ProviderType | None = None,
+) -> ProviderType:
+    choices = [
+        {"name": f"{name} ({ptype.value})", "value": ptype} for ptype, name in available_providers
+    ]
+    default = current if current and any(p[0] == current for p in available_providers) else None
+    result = inquirer.select(
+        message="Select LLM provider",
+        choices=choices,
+        default=default,
+    ).execute()
+    return result

@@ -24,6 +24,11 @@ class OpenAIProvider(LLMProvider):
     async def is_available(self) -> bool:
         return self.config.openai_api_key is not None
 
+    def get_unavailability_reason(self) -> str | None:
+        if self.config.openai_api_key is None:
+            return "OPENAI_API_KEY not set"
+        return None
+
     def _get_client(self) -> AsyncOpenAI:
         if self._client is None:
             self._client = AsyncOpenAI(api_key=self.config.openai_api_key)
