@@ -1,10 +1,12 @@
 # iMessage Data Foundry
 
-🏭 Generate realistic, schema-accurate iMessage databases for testing and development.
+Generate realistic iMessage and Address Book sqlite databases for mock testing and demo applications.
 
 ## Overview
 
-iMessage Data Foundry creates synthetic `chat.db` SQLite databases that exactly mirror the macOS iMessage schema. It uses AI to generate realistic personas and conversations, producing databases suitable for:
+iMessage Data Foundry creates synthetic `chat.db` SQLite databases that exactly mirror the macOS iMessage schema. You have the option to use Ai to generate the personas and conversations. You can either use local models through mlx (note, really only for apple silicon though given the dependency on `mlx-lm`.), or OpenAI / Anthropic endpoints.
+
+Good use cases for this synthetic data are:
 
 - **Testing** iMessage analysis tools and exporters
 - **Development** of applications that interface with iMessage data
@@ -12,26 +14,40 @@ iMessage Data Foundry creates synthetic `chat.db` SQLite databases that exactly 
 
 ## Features
 
-- ✅ **Full Schema Replication** — Exact match of macOS iMessage `chat.db` structure
-- ✅ **Multi-Version Support** — Sonoma (14.x), Sequoia (15.x), and Tahoe (26.x)
-- ✅ **AI-Powered Personas** — Generate realistic personas with distinct personalities
-- ✅ **Natural Conversations** — LLM-generated messages that feel authentic
-- ✅ **Persona Library** — Save and reuse personas across database generations
-- ✅ **Group Chats** — Support for both 1:1 and group conversations
-- ✅ **Realistic Timestamps** — Natural message timing with conversation batching
-- ✅ **Attachment Stubs** — Placeholder attachments with proper database records
+- **Full Schema Replication** — Exact match of macOS iMessage `chat.db` structure
+- **Multi-Version Support** — Sonoma (14.x), Sequoia (15.x), and Tahoe (26.x)
+- **AI-Powered Personas** — Generate realistic personas with distinct personalities
+- **Natural Conversations** — LLM-generated messages that feel authentic
+- **Persona Library** — Save and reuse personas across database generations
+- **Group Chats** — Support for both 1:1 and group conversations
+- **Realistic Timestamps** — Natural message timing with conversation batching
+- **Attachment Stubs** — Placeholder attachments with proper database records
 
 ## Installation
 
+### From PyPI (recommended)
+
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/imessage-data-foundry.git
+pip install imessage-data-foundry
+```
+
+### With uvx (no install required)
+
+```bash
+uvx imessage-data-foundry
+```
+
+### With pipx
+
+```bash
+pipx install imessage-data-foundry
+```
+
+### From source
+
+```bash
+git clone https://github.com/johnlarkin1/imessage-data-foundry.git
 cd imessage-data-foundry
-
-# Install with uv
-uv sync
-
-# Or install with pip
 pip install -e .
 ```
 
@@ -45,15 +61,40 @@ uvx imessage-data-foundry
 uv run python -m imessage_data_foundry
 ```
 
+## CLI Options
+
+```bash
+imessage-data-foundry --help
+imessage-data-foundry --version
+imessage-data-foundry --output ~/Desktop/chat.db
+imessage-data-foundry # interactive mode (this is the default)
+```
+
 ## Configuration
 
-On first run, you'll be prompted to configure:
+### LLM Provider
 
-1. **LLM Provider** — Choose OpenAI or Anthropic
-2. **API Key** — Your API key for the selected provider
-3. **macOS Version** — Target schema version (auto-detects by default)
+Select your preferred LLM provider from the **Settings** menu in the app. Available providers depend on which API keys you have configured.
 
-Configuration is stored in `~/.config/imessage-data-foundry/config.toml`.
+### API Keys
+
+Set API keys as environment variables before running the app:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+# or
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+### Local Models
+
+For local inference on Apple Silicon, install `mlx-lm`:
+
+```bash
+pip install mlx-lm
+```
+
+Settings are stored in `~/.config/imessage-data-foundry/foundry.db`.
 
 ## Usage
 
@@ -99,33 +140,25 @@ imessage-exporter -p ./output/chat.db -f html -o ./export/
 
 You'll need an API key from one of the supported providers:
 
-| Provider | Get API Key |
-|----------|-------------|
-| OpenAI | https://platform.openai.com/api-keys |
+| Provider  | Get API Key                                 |
+| --------- | ------------------------------------------- |
+| OpenAI    | https://platform.openai.com/api-keys        |
 | Anthropic | https://console.anthropic.com/settings/keys |
-
-Set via environment variable or enter in the TUI:
-
-```bash
-export OPENAI_API_KEY="sk-..."
-# or
-export ANTHROPIC_API_KEY="sk-ant-..."
-```
 
 ## Project Structure
 
 ```
 imessage-data-foundry/
-├── src/imessage_data_foundry/
-│   ├── app.py              # Textual TUI application
-│   ├── db/                 # Database schema and building
-│   ├── personas/           # Persona management
-│   ├── conversations/      # Conversation generation
-│   ├── llm/                # LLM provider integrations
-│   └── ui/                 # TUI screens and widgets
-├── data/
-│   └── foundry.db          # Local persona library
-└── tests/
+├── imessage_data_foundry/
+│   ├── cli/               # CLI application and flows
+│   ├── db/                # Database schema and building
+│   ├── personas/          # Persona management
+│   ├── conversations/     # Conversation generation
+│   ├── llm/               # LLM provider integrations
+│   ├── settings/          # Settings storage
+│   └── utils/             # Utility functions
+├── tests/                 # Test suite
+└── docs/                  # Documentation
 ```
 
 ## Schema Compatibility

@@ -182,8 +182,8 @@ def test_compatible_with_imessage_exporter():
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Optional: Custom config location
-IMESSAGE_FOUNDRY_CONFIG=~/.config/imessage-data-foundry/config.toml
+# Optional: Custom config directory (foundry.db created in this path's parent)
+IMESSAGE_FOUNDRY_CONFIG=~/.config/imessage-data-foundry/config
 ```
 
 ## Useful Commands During Development
