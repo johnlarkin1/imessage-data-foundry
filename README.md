@@ -47,6 +47,12 @@ uvx imessage-data-foundry
 pipx install imessage-data-foundry
 ```
 
+### With uv tool
+
+```bash
+uv tool install imessage-data-foundry
+```
+
 ### From source
 
 ```bash
